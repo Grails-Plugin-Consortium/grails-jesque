@@ -18,15 +18,6 @@ class WorkerPersistenceListener implements WorkerListener {
         this.persistenceInterceptor = persistenceInterceptor
     }
 
-    void onEvent(WorkerEvent workerEvent, Worker worker, String s, Job job, Object o, Object o1, Exception e) {
-        log.debug("Processing worker event ${workerEvent.name()}")
-        if( workerEvent == WorkerEvent.JOB_EXECUTE ) {
-            boundByMe = bindSession()
-        } else if( workerEvent in [WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE]) {
-            unbindSession()
-        }
-    }
-
     private boolean bindSession() {
         boolean boundByMe = false
         if(persistenceInterceptor == null)
@@ -67,6 +58,16 @@ class WorkerPersistenceListener implements WorkerListener {
             log.error(message, exception)
         } else {
             thread.uncaughtExceptionHandler.uncaughtException(thread, exception)
+        }
+    }
+
+    @Override
+    void onEvent(WorkerEvent workerEvent, Worker worker, String queue, Job job, Object runner, Object result, Throwable t) {
+        log.debug("Processing worker event ${workerEvent.name()}")
+        if( workerEvent == WorkerEvent.JOB_EXECUTE ) {
+            boundByMe = bindSession()
+        } else if( workerEvent in [WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE]) {
+            unbindSession()
         }
     }
 }

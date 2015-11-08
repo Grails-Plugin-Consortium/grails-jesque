@@ -193,6 +193,8 @@ public class CronExpression implements Serializable, Cloneable {
     /**
      * Returns the time zone for which this <code>CronExpression</code>
      * will be resolved.
+     *
+     * @return TimeZone the timezone
      */
     public TimeZone getTimeZone() {
         if (timeZone == null) {
@@ -213,6 +215,8 @@ public class CronExpression implements Serializable, Cloneable {
     /**
      * Sets the time zone for which  this <code>CronExpression</code>
      * will be resolved.
+     *
+     * @param timeZone the time zone
      */
     public void setTimeZone(DateTimeZone timeZone) {
         this.timeZone = timeZone.toTimeZone();
@@ -1383,8 +1387,8 @@ public class CronExpression implements Serializable, Cloneable {
      * Advance the calendar to the particular hour paying particular attention
      * to daylight saving problems.
      *
-     * @param cal
-     * @param hour
+     * @param cal the calendar
+     * @param hour the hour
      */
     protected void setCalendarHour(Calendar cal, int hour) {
         cal.set(java.util.Calendar.HOUR_OF_DAY, hour);
@@ -1396,6 +1400,8 @@ public class CronExpression implements Serializable, Cloneable {
     /**
      * NOT YET IMPLEMENTED: Returns the time before the given time
      * that the <code>CronExpression</code> matches.
+     *
+     * @return Date the date
      */
     public Date getTimeBefore(Date endTime) {
         // TODO: implement QUARTZ-423
@@ -1405,6 +1411,8 @@ public class CronExpression implements Serializable, Cloneable {
     /**
      * NOT YET IMPLEMENTED: Returns the final time that the
      * <code>CronExpression</code> will match.
+     *
+     * @return Date the date
      */
     public Date getFinalFireTime() {
         // TODO: implement QUARTZ-423

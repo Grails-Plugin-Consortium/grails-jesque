@@ -105,7 +105,7 @@ class GrailsJesqueGrailsPlugin extends Plugin {
         def fullName = jobClass.fullName
 
         "${fullName}Class"(MethodInvokingFactoryBean) {
-            targetObject = ref("grailsApplication", true)
+            targetObject = ref("grailsApplication", false)
             targetMethod = "getArtefact"
             arguments = [JesqueJobArtefactHandler.TYPE, jobClass.fullName]
         }
@@ -115,6 +115,8 @@ class GrailsJesqueGrailsPlugin extends Plugin {
             bean.autowire = "byName"
             bean.scope = "prototype"
         }
+
+        log.info "Wired job beans for $jobClass.fullName"
     }
 
     void doWithDynamicMethods() {
