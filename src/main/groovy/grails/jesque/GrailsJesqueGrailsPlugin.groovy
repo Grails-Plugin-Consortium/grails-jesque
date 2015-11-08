@@ -1,5 +1,6 @@
 package grails.jesque
 
+import grails.core.GrailsApplication
 import grails.plugins.jesque.GrailsJesqueJobClass
 import grails.plugins.jesque.JesqueConfigurationService
 import grails.plugins.jesque.JesqueDelayedJobThreadService
@@ -9,61 +10,62 @@ import grails.plugins.jesque.JesqueService
 import grails.plugins.jesque.TriggersConfigBuilder
 import grails.plugins.*
 import grails.util.GrailsUtil
+import groovy.util.logging.Slf4j
+import net.greghaines.jesque.Config
 import net.greghaines.jesque.ConfigBuilder
-import org.codehaus.groovy.grails.commons.GrailsApplication
+import net.greghaines.jesque.admin.AdminClientImpl
+import net.greghaines.jesque.client.ClientPoolImpl
+import net.greghaines.jesque.meta.dao.impl.FailureDAORedisImpl
+import net.greghaines.jesque.meta.dao.impl.KeysDAORedisImpl
+import net.greghaines.jesque.meta.dao.impl.QueueInfoDAORedisImpl
+import net.greghaines.jesque.meta.dao.impl.WorkerInfoDAORedisImpl
 import org.springframework.beans.factory.config.MethodInvokingFactoryBean
 import org.springframework.context.ApplicationContext
 
+@Slf4j
 class GrailsJesqueGrailsPlugin extends Plugin {
 
     // the version or versions of Grails the plugin is designed for
-    def grailsVersion = "3.0.4 > *"
+    def grailsVersion = "3.0.0 > *"
     // resources that are excluded from plugin packaging
+    def dependsOn = [redis: "2.0.0 > *"]
     def pluginExcludes = [
-        "grails-app/views/error.gsp"
+            "grails-app/views/**",
+            "grails-app/domain/**",
+            "grails-app/jobs/**",
+            "test/**",
     ]
 
-    // TODO Fill in these fields
-    def title = "Grails Jesque" // Headline display name of the plugin
-    def author = "Your name"
-    def authorEmail = ""
-    def description = '''\
-Brief summary/description of the plugin.
-'''
+    def title = "Jesque - Redis backed job processing"
+    def description = 'Grails Jesque plug-in. Redis backed job processing'
+
+    def author = "Michael Cameron"
+    def authorEmail = "michael.e.cameron@gmail.com"
+
+    def license = "APACHE"
+    def developers = [
+            [name: "Michael Cameron", email: "michael.e.cameron@gmail.com"],
+            [name: "Ted Naleid", email: "contact@naleid.com"],
+            [name: "Philipp Eschenbach", email: "peh@kunstsysteme.com"],
+            [name: "Florian Langenhahn", email: "fln@kunstsysteme.com"]]
+    def documentation = "https://github.com/michaelcameron/grails-jesque"
+    def scm = [url: "https://github.com/michaelcameron/grails-jesque"]
+
+    def loadAfter = ['core', 'hibernate']
     def profiles = ['web']
-
-    // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/grails-jesque"
-
-    // Extra (optional) plugin metadata
-
-    // License: one of 'APACHE', 'GPL2', 'GPL3'
-//    def license = "APACHE"
-
-    // Details of company behind the plugin (if there is one)
-//    def organization = [ name: "My Company", url: "http://www.my-company.com/" ]
-
-    // Any additional developers beyond the author specified above.
-//    def developers = [ [ name: "Joe Bloggs", email: "joe@bloggs.net" ]]
-
-    // Location of the plugin's issue tracker.
-//    def issueManagement = [ system: "JIRA", url: "http://jira.grails.org/browse/GPMYPLUGIN" ]
-
-    // Online location of the plugin's browseable source code.
-//    def scm = [ url: "http://svn.codehaus.org/grails-plugins/" ]
 
     Closure doWithSpring() { {->
         log.info "Merging in default jesque config"
-        loadJesqueConfig(application.config.grails.jesque)
+        loadJesqueConfig(grailsApplication.config.grails.jesque)
 
-        if(!isJesqueEnabled(application)) {
+        if(!isJesqueEnabled(grailsApplication)) {
             log.info "Jesque Disabled"
             return
         }
 
         log.info "Creating jesque core beans"
-        def redisConfigMap = application.config.grails.redis
-        def jesqueConfigMap = application.config.grails.jesque
+        def redisConfigMap = grailsApplication.config.grails.redis
+        def jesqueConfigMap = grailsApplication.config.grails.jesque
 
         def jesqueConfigBuilder = new ConfigBuilder()
         if(jesqueConfigMap.namespace)
@@ -92,7 +94,7 @@ Brief summary/description of the plugin.
         workerInfoDao(WorkerInfoDAORedisImpl, ref('jesqueConfig'), ref('redisPool'))
 
         log.info "Creating jesque job beans"
-        application.jesqueJobClasses.each {jobClass ->
+        grailsApplication.jesqueJobClasses.each {jobClass ->
             configureJobBeans.delegate = delegate
             configureJobBeans(jobClass)
         }
@@ -120,19 +122,19 @@ Brief summary/description of the plugin.
     }
 
     void doWithApplicationContext() {
-        if(!isJesqueEnabled(application))
+        if(!isJesqueEnabled(grailsApplication))
             return
 
-        TriggersConfigBuilder.metaClass.getGrailsApplication = { -> application }
+        TriggersConfigBuilder.metaClass.getGrailsApplication = { -> grailsApplication }
 
         JesqueConfigurationService jesqueConfigurationService = applicationContext.jesqueConfigurationService
 
         log.info "Scheduling Jesque Jobs"
-        application.jesqueJobClasses.each{ GrailsJesqueJobClass jobClass ->
+        grailsApplication.jesqueJobClasses.each{ GrailsJesqueJobClass jobClass ->
             jesqueConfigurationService.scheduleJob(jobClass)
         }
 
-        def jesqueConfigMap = application.config.grails.jesque
+        def jesqueConfigMap = grailsApplication.config.grails.jesque
 
         if( jesqueConfigMap.schedulerThreadActive ) {
             log.info "Launching jesque scheduler thread"
@@ -169,22 +171,22 @@ Brief summary/description of the plugin.
         if(!isJesqueEnabled(application))
             return
 
-        Class source = event.source
-        if(!application.isArtefactOfType(JesqueJobArtefactHandler.TYPE, source)) {
+        Class source = event.source as Class
+        if(!grailsApplication.isArtefactOfType(JesqueJobArtefactHandler.TYPE, source)) {
             return
         }
 
         log.debug("Job ${source} changed. Reloading...")
 
-        ApplicationContext context = event.ctx
+        ApplicationContext context = event.ctx as ApplicationContext
         JesqueConfigurationService jesqueConfigurationService = context?.jesqueConfigurationService
 
         if(context && jesqueConfigurationService) {
-            GrailsJesqueJobClass jobClass = application.getJobClass(source.name)
+            GrailsJesqueJobClass jobClass = grailsApplication.getJobClass(source.name)
             if(jobClass)
                 jesqueConfigurationService.deleteScheduleJob(jobClass)
 
-            jobClass = (GrailsJesqueJobClass)application.addArtefact(JesqueJobArtefactHandler.TYPE, source)
+            jobClass = (GrailsJesqueJobClass)grailsApplication.addArtefact(JesqueJobArtefactHandler.TYPE, source)
 
             beans {
                 configureJobBeans.delegate = delegate
@@ -220,7 +222,7 @@ Brief summary/description of the plugin.
         return jesqueConfig
     }
 
-    private Boolean isJesqueEnabled(GrailsApplication application) {
+    private static Boolean isJesqueEnabled(GrailsApplication application) {
         def jesqueConfigMap = application.config.grails.jesque
 
         Boolean isJesqueEnabled = true
