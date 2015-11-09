@@ -207,6 +207,8 @@ public class CronExpression implements Serializable, Cloneable {
     /**
      * Sets the time zone for which  this <code>CronExpression</code>
      * will be resolved.
+     *
+     * @param timeZone The timezone
      */
     public void setTimeZone(TimeZone timeZone) {
         this.timeZone = timeZone;
@@ -1401,6 +1403,7 @@ public class CronExpression implements Serializable, Cloneable {
      * NOT YET IMPLEMENTED: Returns the time before the given time
      * that the <code>CronExpression</code> matches.
      *
+     * @param endTime the end time
      * @return Date the date
      */
     public Date getTimeBefore(Date endTime) {

@@ -1,9 +1,9 @@
 package grails.plugins.jesque
 
+import org.joda.time.DateTime
 import org.springframework.beans.factory.DisposableBean
 
 import java.util.concurrent.atomic.AtomicReference
-import org.joda.time.DateTime
 
 class JesqueDelayedJobThreadService implements Runnable, DisposableBean {
     static transactional = true
@@ -31,11 +31,11 @@ class JesqueDelayedJobThreadService implements Runnable, DisposableBean {
     }
 
     public void run() {
-        if( !threadState.compareAndSet(JesqueDelayedJobThreadState.New, JesqueDelayedJobThreadState.Running)) {
+        if (!threadState.compareAndSet(JesqueDelayedJobThreadState.New, JesqueDelayedJobThreadState.Running)) {
             throw new Exception("Cannot start delayed job thread, state was not the expected ${JesqueDelayedJobThreadState.New} state")
         }
 
-        while( threadState.get() == JesqueDelayedJobThreadState.Running ) {
+        while (threadState.get() == JesqueDelayedJobThreadState.Running) {
             withRetryUsingBackoff(MAX_RETRY_ATTEMPTS, MAX_SLEEP_TIME_MS) {
                 mainThreadLoop()
             }
@@ -49,9 +49,9 @@ class JesqueDelayedJobThreadService implements Runnable, DisposableBean {
 
         def nextFireTime = jesqueDelayedJobService.nextFireTime()
         def timeToNextJobMs = nextFireTime.millis - new DateTime().millis
-        if( timeToNextJobMs < 0 )
+        if (timeToNextJobMs < 0)
             return
-        else if (timeToNextJobMs < maxSleepTimeMs )
+        else if (timeToNextJobMs < maxSleepTimeMs)
             Thread.sleep(timeToNextJobMs)
         else
             Thread.sleep(maxSleepTimeMs)
@@ -60,26 +60,26 @@ class JesqueDelayedJobThreadService implements Runnable, DisposableBean {
     public void stop(Integer waitMilliseconds = IDLE_WAIT_TIME + 2000, Boolean interrupt = false) {
         log.info "Stopping the jesque delayed job thread"
         threadState.set(JesqueDelayedJobThreadState.Stopped)
-        try{
+        try {
             delayedJobThread.join(waitMilliseconds)
         } catch (InterruptedException ignore) {
             log.debug "Interrupted exception caught when trying to stop delayed job thread"
         }
-        if( interrupt && delayedJobThread.isAlive() )
+        if (interrupt && delayedJobThread.isAlive())
             delayedJobThread.interrupt()
     }
 
     protected withRetryUsingBackoff(int attempts, long maxSleepTimeMs, Closure closure) {
-        for(int attempt = 1; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
+        for (int attempt = 1; attempt < MAX_RETRY_ATTEMPTS; attempt++) {
             try {
                 return closure()
-            } catch(Exception exception) {
+            } catch (Exception exception) {
                 log.error "Jesque delayed job exception, attempt $attempt of $MAX_RETRY_ATTEMPTS", exception
 
-                if( threadState.get() != JesqueDelayedJobThreadState.Running ) {
+                if (threadState.get() != JesqueDelayedJobThreadState.Running) {
                     log.info "Aborting retries because thread state is ${threadState.get()}"
-                } else if( attempt != MAX_RETRY_ATTEMPTS ) {
-                    Double sleepTime = Math.min( MAX_SLEEP_TIME_MS, 500 + random.nextDouble() * Math.pow(2, attempt))
+                } else if (attempt != MAX_RETRY_ATTEMPTS) {
+                    Double sleepTime = Math.min(MAX_SLEEP_TIME_MS, 500 + random.nextDouble() * Math.pow(2, attempt))
                     Thread.sleep(sleepTime.toLong())
                 } else {
                     log.error "Could not run delayed job thread after $MAX_RETRY_ATTEMPTS attempts, stopping for good"
@@ -89,7 +89,7 @@ class JesqueDelayedJobThreadService implements Runnable, DisposableBean {
         }
     }
 
-    void destroy()  {
+    void destroy() {
         this.stop()
     }
 }

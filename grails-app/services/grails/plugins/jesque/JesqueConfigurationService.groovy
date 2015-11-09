@@ -7,7 +7,7 @@ class JesqueConfigurationService {
     def jesqueSchedulerService
 
     Boolean validateConfig(ConfigObject jesqueConfigMap) {
-        jesqueConfigMap.workers.each{ String workerPoolName, ConfigObject value ->
+        jesqueConfigMap?.workers?.each{ String workerPoolName, ConfigObject value ->
             if( value.workers && !(value.workers instanceof Integer)  )
                 throw new Exception("Invalid worker count ${value.workers} for pool $workerPoolName, expecting Integer")
 
@@ -29,8 +29,8 @@ class JesqueConfigurationService {
     }
 
     void mergeClassConfigurationIntoConfigMap(ConfigObject jesqueConfigMap) {
-        grailsApplication.jesqueJobClasses.each { GrailsJesqueJobClass jobArtefact ->
-            def alreadyConfiguredPool = jesqueConfigMap.workers.find{ poolName, poolConfig ->
+        grailsApplication.jesqueJobClasses?.each { GrailsJesqueJobClass jobArtefact ->
+            def alreadyConfiguredPool = jesqueConfigMap?.workers?.find{ poolName, poolConfig ->
                 poolConfig.jobTypes.any{ jobName, jobClassValue ->
                     jobClassValue == jobArtefact.clazz
                 }
@@ -50,21 +50,23 @@ class JesqueConfigurationService {
                 return
             }
 
-            def workerPoolConfig = jesqueConfigMap.workers."${jobArtefact.workerPool}"
-            if( !workerPoolConfig.queueNames )
-                workerPoolConfig.queueNames = []
-            if( !workerPoolConfig.jobTypes )
-                workerPoolConfig.jobTypes = [:]
+            def workerPoolConfig = jesqueConfigMap?.workers?."${jobArtefact.workerPool}"
+            if(workerPoolConfig) {
+                if (!workerPoolConfig.queueNames)
+                    workerPoolConfig.queueNames = []
+                if (!workerPoolConfig.jobTypes)
+                    workerPoolConfig.jobTypes = [:]
 
-            if( workerPoolConfig.queueNames instanceof String )
-                workerPoolConfig.queueNames = [workerPoolConfig.queueNames]
+                if (workerPoolConfig.queueNames instanceof String)
+                    workerPoolConfig.queueNames = [workerPoolConfig.queueNames]
 
-            jobArtefact.jobNames.each{ jobName ->
-                workerPoolConfig.jobTypes += [(jobName):jobArtefact.clazz]
+                jobArtefact.jobNames.each { jobName ->
+                    workerPoolConfig.jobTypes += [(jobName): jobArtefact.clazz]
+                }
+
+                if (!(jobArtefact.queue in workerPoolConfig.queueNames))
+                    workerPoolConfig.queueNames += jobArtefact.queue
             }
-
-            if( !(jobArtefact.queue in workerPoolConfig.queueNames) )
-                workerPoolConfig.queueNames += jobArtefact.queue
         }
     }
 

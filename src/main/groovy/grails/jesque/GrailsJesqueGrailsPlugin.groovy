@@ -56,7 +56,6 @@ class GrailsJesqueGrailsPlugin extends Plugin {
 
     Closure doWithSpring() { {->
         log.info "Merging in default jesque config"
-        loadJesqueConfig(grailsApplication.config.grails.jesque)
 
         if(!isJesqueEnabled(grailsApplication)) {
             log.info "Jesque Disabled"
@@ -152,7 +151,7 @@ class GrailsJesqueGrailsPlugin extends Plugin {
         log.info "Starting jesque workers"
         JesqueService jesqueService = applicationContext.jesqueService
 
-        jesqueConfigurationService.validateConfig(jesqueConfigMap)
+        jesqueConfigurationService.validateConfig(jesqueConfigMap as ConfigObject)
 
         log.info "Found ${jesqueConfigMap.size()} workers"
         if(jesqueConfigMap.pruneWorkersOnStartup) {
@@ -160,17 +159,17 @@ class GrailsJesqueGrailsPlugin extends Plugin {
             jesqueService.pruneWorkers()
         }
 
-        jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap)
+        jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
         if(jesqueConfigMap.createWorkersOnStartup) {
             log.info "Creating workers"
-            jesqueService.startWorkersFromConfig(jesqueConfigMap)
+            jesqueService.startWorkersFromConfig(jesqueConfigMap as ConfigObject)
         }
 
         applicationContext
     }
 
     void onChange(Map<String, Object> event) {
-        if(!isJesqueEnabled(application))
+        if(!isJesqueEnabled(grailsApplication))
             return
 
         Class source = event.source as Class
@@ -210,22 +209,8 @@ class GrailsJesqueGrailsPlugin extends Plugin {
         // TODO Implement code that is executed when the application shuts down (optional)
     }
 
-    private ConfigObject loadJesqueConfig(ConfigObject jesqueConfig) {
-        GroovyClassLoader classLoader = new GroovyClassLoader(getClass().classLoader)
-
-        // merging default jesque config into main application config
-        def defaultConfig = new ConfigSlurper(GrailsUtil.environment).parse(classLoader.loadClass('DefaultJesqueConfig'))
-
-        //may look weird, but we must merge the user config into default first so the user overrides default,
-        // then merge back into the main to bring default values in that were not overridden
-        def mergedConfig = defaultConfig.grails.jesque.merge(jesqueConfig)
-        jesqueConfig.merge( mergedConfig )
-
-        return jesqueConfig
-    }
-
     private static Boolean isJesqueEnabled(GrailsApplication application) {
-        def jesqueConfigMap = application.config.grails.jesque
+        def jesqueConfigMap = application.config?.grails?.jesque
 
         Boolean isJesqueEnabled = true
 

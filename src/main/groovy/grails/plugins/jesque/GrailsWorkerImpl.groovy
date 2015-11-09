@@ -3,6 +3,8 @@ package grails.plugins.jesque
 import grails.core.GrailsApplication
 import grails.spring.BeanBuilder
 import groovy.util.logging.Commons
+import groovy.util.logging.Slf4j
+import net.greghaines.jesque.worker.MapBasedJobFactory
 
 import static net.greghaines.jesque.utils.ResqueConstants.WORKER
 import static net.greghaines.jesque.worker.WorkerEvent.JOB_PROCESS
@@ -15,7 +17,7 @@ import net.greghaines.jesque.worker.RecoveryStrategy
 import static net.greghaines.jesque.worker.WorkerEvent.WORKER_ERROR
 import redis.clients.jedis.exceptions.JedisConnectionException
 
-@Commons
+@Slf4j
 class GrailsWorkerImpl extends WorkerImpl {
 
     BeanBuilder beanBuilder
@@ -26,14 +28,14 @@ class GrailsWorkerImpl extends WorkerImpl {
             GrailsApplication grailsApplication,
             final Config config,
             final Collection<String> queues,
-            final Map<String, Class> jobTypes) {
-        super(config, queues, jobTypes)
+            final Map<String, ? extends Class> jobTypes) {
+        super(config, queues, new MapBasedJobFactory(jobTypes))
 
         this.grailsApplication = grailsApplication
         beanBuilder = new BeanBuilder()
     }
 
-    protected void checkJobType(final String jobName, final Class<?> jobType) {
+    protected static void checkJobType(final String jobName, final Class<?> jobType) {
         if (jobName == null) {
             throw new IllegalArgumentException("jobName must not be null")
         }
@@ -46,13 +48,14 @@ class GrailsWorkerImpl extends WorkerImpl {
         this.listenerDelegate.fireEvent(JOB_PROCESS, this, curQueue, job, null, null, null)
         renameThread("Processing " + curQueue + " since " + System.currentTimeMillis())
         try {
-            Class jobClass = jobTypes[job.className]
+            Class jobClass = ((MapBasedJobFactory)this.jobFactory).getJobTypes()[job.className]
             if(!jobClass) {
                 throw new UnpermittedJobException(job.className)
             }
             def instance = createInstance(jobClass.canonicalName)
             execute(job, curQueue, instance, job.args)
         } catch (Exception e) {
+            log.error("Failed job execution", e)
             failure(e, job, curQueue)
         }
     }
@@ -82,6 +85,7 @@ class GrailsWorkerImpl extends WorkerImpl {
         super.recoverFromException(curQueue, e)
         final RecoveryStrategy recoveryStrategy = this.exceptionHandler.onException(this, e, curQueue)
         final int reconnectAttempts = getReconnectAttempts()
+        final int reconnectSleepTime = 5000
         switch (recoveryStrategy)
         {
             case RecoveryStrategy.RECONNECT:
