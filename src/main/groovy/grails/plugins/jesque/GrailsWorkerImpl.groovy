@@ -48,14 +48,14 @@ class GrailsWorkerImpl extends WorkerImpl {
         this.listenerDelegate.fireEvent(JOB_PROCESS, this, curQueue, job, null, null, null)
         renameThread("Processing " + curQueue + " since " + System.currentTimeMillis())
         try {
-            Class jobClass = ((MapBasedJobFactory)this.jobFactory).getJobTypes()[job.className]
+            Class jobClass = ((MapBasedJobFactory)this.jobFactory).getJobTypes()[grailsApplication.getClassForName(job.className).simpleName]
             if(!jobClass) {
                 throw new UnpermittedJobException(job.className)
             }
             def instance = createInstance(jobClass.canonicalName)
             execute(job, curQueue, instance, job.args)
         } catch (Exception e) {
-            log.error("Failed job execution", e)
+            log.error("Failed job execution", e)I can
             failure(e, job, curQueue)
         }
     }
@@ -72,6 +72,7 @@ class GrailsWorkerImpl extends WorkerImpl {
     protected void execute(final Job job, final String curQueue, final Object instance, final Object[] args) {
         this.jedis.set(key(WORKER, this.name), statusMsg(curQueue, job))
         try {
+            log.info "Running perform on instance ${job.className}"
             final Object result
             this.listenerDelegate.fireEvent(JOB_EXECUTE, this, curQueue, job, instance, null, null)
             result = instance.perform(* args)

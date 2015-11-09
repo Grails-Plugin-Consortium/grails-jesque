@@ -168,12 +168,12 @@
     <orderEntry type="library" scope="TEST" name="Gradle: org.codehaus.groovy:groovy-test:2.4.4" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: asm:asm:3.3.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: org.objenesis:objenesis:2.1" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: org.grails.plugins:grails-redis:2.0.2" level="project" />
+    <orderEntry type="library" exported="" name="Gradle: com.google.code.gson:gson:2.3.1" level="project" />
     <orderEntry type="library" exported="" name="Gradle: net.greghaines:jesque:2.1.0" level="project" />
     <orderEntry type="library" exported="" name="Gradle: org.apache.commons:commons-pool2:2.4.2" level="project" />
     <orderEntry type="library" exported="" name="Gradle: com.fasterxml.jackson.core:jackson-core:2.6.3" level="project" />
     <orderEntry type="library" exported="" name="Gradle: com.fasterxml.jackson.core:jackson-databind:2.6.3" level="project" />
     <orderEntry type="library" exported="" name="Gradle: com.fasterxml.jackson.core:jackson-annotations:2.6.0" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: org.grails.plugins:grails-redis:2.0.2" level="project" />
-    <orderEntry type="library" exported="" name="Gradle: com.google.code.gson:gson:2.3.1" level="project" />
   </component>
 </module>

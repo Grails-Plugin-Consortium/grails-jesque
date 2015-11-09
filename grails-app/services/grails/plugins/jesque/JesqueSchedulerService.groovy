@@ -190,7 +190,8 @@ class JesqueSchedulerService {
     void serverCheckIn(String hostName, DateTime checkInDate) {
         //TODO: detect checkins by another server of the same name
         redisService.withRedis {Jedis redis ->
-            redis.hset("$SCHEDULER_PREFIX:checkIn", hostName, checkInDate.millis.toString())
+            log.info "$SCHEDULER_PREFIX:checkIn"
+            redis.hset("$SCHEDULER_PREFIX:checkIn", hostName, new Long(checkInDate.millis).toString())
         }
     }
 

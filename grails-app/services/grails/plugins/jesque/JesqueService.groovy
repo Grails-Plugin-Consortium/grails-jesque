@@ -1,5 +1,6 @@
 package grails.plugins.jesque
 
+import grails.core.GrailsApplication
 import grails.persistence.support.PersistenceContextInterceptor
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Job
@@ -24,7 +25,7 @@ class JesqueService implements DisposableBean {
 
     static final int DEFAULT_WORKER_POOL_SIZE = 3
 
-    def grailsApplication
+    GrailsApplication grailsApplication
     def jesqueConfig
     def jesqueDelayedJobService
     PersistenceContextInterceptor persistenceInterceptor
@@ -117,7 +118,7 @@ class JesqueService implements DisposableBean {
         startWorker(queueName, [(jobName): jobClass], exceptionHandler, paused)
     }
 
-    Worker startWorker(String queueName, Map<String, Class> jobTypes, ExceptionHandler exceptionHandler = null,
+    Worker startWorker(String queueName, Map<String, ? extends Class> jobTypes, ExceptionHandler exceptionHandler = null,
                        boolean paused = false) {
         startWorker([queueName], jobTypes, exceptionHandler, paused)
     }
@@ -139,7 +140,7 @@ class JesqueService implements DisposableBean {
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
             if (customListenerClass in WorkerListener)
-                worker.addListener(customListenerClass.newInstance() as WorkerListener)
+                worker.getWorkerEventEmitter().addListener(customListenerClass.newInstance() as WorkerListener)
             else
                 log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
         }
@@ -166,10 +167,10 @@ class JesqueService implements DisposableBean {
         admin.setWorker(worker)
 
         def workerPersistenceListener = new WorkerPersistenceListener(persistenceInterceptor)
-        worker.addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
+        worker.getWorkerEventEmitter().addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
 
         def workerLifeCycleListener = new WorkerLifecycleListener(this)
-        worker.addListener(workerLifeCycleListener, WorkerEvent.WORKER_STOP)
+        worker.getWorkerEventEmitter().addListener(workerLifeCycleListener, WorkerEvent.WORKER_STOP)
 
         def workerThread = new Thread(worker)
         workerThread.start()
@@ -206,14 +207,16 @@ class JesqueService implements DisposableBean {
 
     void startWorkersFromConfig(ConfigObject jesqueConfigMap) {
 
-        def startPaused = jesqueConfigMap.startPaused as boolean ?: false
+        boolean startPaused = jesqueConfigMap.startPaused as boolean ?: false
 
-        jesqueConfigMap?.workers?.each { String workerPoolName, value ->
+        jesqueConfigMap?.workers?.keySet()?.each { String workerPoolName ->
+
             log.info "Starting workers for pool $workerPoolName"
+            def value = jesqueConfigMap?.workers[workerPoolName]
 
             def workers = value.workers ? value.workers.toInteger() : DEFAULT_WORKER_POOL_SIZE
-            def queueNames = value.queueNames
-            def jobTypes = value.jobTypes
+            String queueNames = value.queueNames
+            Map<String, String> jobTypes = value.jobTypes
 
             if (!((queueNames instanceof String) || (queueNames instanceof List<String>)))
                 throw new Exception("Invalid queueNames for pool $workerPoolName, expecting must be a String or a List<String>.")
@@ -221,8 +224,13 @@ class JesqueService implements DisposableBean {
             if (!(jobTypes instanceof Map))
                 throw new Exception("Invalid jobTypes (${jobTypes}) for pool $workerPoolName, must be a map")
 
+            Map<String, Class> jobNameClass = [:]
+            jobTypes?.each { String k, String v ->
+                jobNameClass.put(k, grailsApplication.getClassForName(v))
+            }
+
             workers.times {
-                startWorker(queueNames, jobTypes, null, startPaused)
+                startWorker(queueNames, jobNameClass, null, startPaused)
             }
         }
     }

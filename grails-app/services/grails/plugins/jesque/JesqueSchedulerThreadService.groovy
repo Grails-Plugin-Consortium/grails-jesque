@@ -19,7 +19,7 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
 
     protected static Random random = new Random()
 
-    def jesqueSchedulerService
+    JesqueSchedulerService jesqueSchedulerService
 
     void startSchedulerThread() {
         schedulerThread = new Thread(this, "Jesque Scheduler Thread")
@@ -50,8 +50,9 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
         DateTime findJobsUntil = new DateTime().plusMillis(IDLE_WAIT_TIME)
         Integer enqueueJobCount = jesqueSchedulerService.enqueueReadyJobs(findJobsUntil, getHostName())
 
-        if( enqueueJobCount == 0 && threadState.get() == JesqueScheduleThreadState.Running )
+        if( enqueueJobCount == 0 && threadState.get() == JesqueScheduleThreadState.Running ) {
             Thread.sleep(IDLE_WAIT_TIME)
+        }
     }
 
     public void stop(Integer waitMilliseconds = IDLE_WAIT_TIME + 2000, Boolean interrupt = false) {
