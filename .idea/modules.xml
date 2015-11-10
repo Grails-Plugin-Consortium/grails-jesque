@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/grails-jesque.iml" filepath="$PROJECT_DIR$/grails-jesque.iml" />
-      <module fileurl="file://$PROJECT_DIR$/grails-jesque.iml" filepath="$PROJECT_DIR$/grails-jesque.iml" />
     </modules>
   </component>
 </project>
