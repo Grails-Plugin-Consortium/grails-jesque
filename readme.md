@@ -12,6 +12,12 @@ Either UI will allow you to see what's in your queues and view and re-process fa
 
 A scheduler (a la Quartz) has been added to support scheduled injection of jobs. The syntax is very similar to the grails Quartz plugin. 
 
+
+Demo Project
+-------------
+There is a demo project located [in github](https://github.com/Grails-Plugin-Consortium/grails-jesque-demo).
+
+
 How do I use it?
 ----------------
 Add the jesque plugin to grails, it will automatically pull in jesque with it's dependencies, and the grails redis plugin.

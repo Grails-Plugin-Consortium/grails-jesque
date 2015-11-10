@@ -16,7 +16,7 @@ plugins {
     id "com.jfrog.bintray" version "1.2"
 }
 
-version "1.0.0-SNAPSHOT"
+version "1.0.0"
 group "org.grails.plugins"
 
 apply plugin: 'io.spring.dependency-management'
@@ -75,3 +75,23 @@ dependencies {
 task wrapper(type: Wrapper) {
     gradleVersion = gradleWrapperVersion
 }
+
+bintray {
+    user = System.getenv("BINTRAY_USER") ?: project.hasProperty("bintrayUser") ? project.bintrayUser : ''
+    key = System.getenv("BINTRAY_KEY") ?: project.hasProperty("bintrayKey") ? project.bintrayKey : ''
+    publications = ['maven']
+    pkg {
+        repo = 'grails-plugins'
+        userOrg = 'ctoestreich'
+        name = "org.grails.plugins:grails-jesque"
+        desc = "Grails Jesque Plugin"
+        websiteUrl = "http://grails.org/plugin/grails-jesque"
+        issueTrackerUrl = "https://github.com/Grails-Plugin-Consortium/grails-jesque/issues"
+        vcsUrl = "https://github.com/Grails-Plugin-Consortium/grails-jesque"
+        licenses = ['Apache-2.0']
+        publicDownloadNumbers = true
+    }
+}
+
+
+bintrayUpload.dependsOn build, sourcesJar, javadocJar
