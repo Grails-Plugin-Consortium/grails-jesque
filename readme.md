@@ -51,34 +51,39 @@ class SomeOtherClass {
 Workers can be started manually by calling
 
 ```groovy
-    jesqueService.startWorker( 'myQueueName', BackgroundJob.simpleName, BackgroundJob )
+    jesqueService.startWorker( 'DemoJesqueJobQueue', DemoJesqueJob.simpleName, DemoJesqueJob )
 ```
 
 or automatically upon start-up with the following config
 
-```xml
-grails {
-    jesque {
-        workers {
-            someNameForYourWorkerPool {
-                workers = 3 //defaults to 1
-                queueNames = 'myQueueName' //or a list
-                jobTypes = [(BackgroundJob.simpleName):BackgroundJob]
-            }
-        }
-    }
-}
+```yaml
+---
+grails:
+    redis:
+        port: 6379
+        host: localhost
+    jesque:
+        enabled: true
+        pruneWorkersOnStartup: true
+        createWorkersOnStartup: true
+        schedulerThreadActive: true
+        delayedJobThreadActive: true
+        startPaused: false
+        workers:
+            DemoJesqueJobPool:
+                queueNames: DemoJesqueJobQueue
+                jobTypes:
+                    - org.grails.jesque.demo.DemoJesqueJob
+                    - org.grails.jesque.demo.DemoTwoJesqueJob
 ```
 
 The redis pool used is configured in the [redis](https://github.com/grails-plugins/grails-redis) plugin:
 
-```xml
-grails {
-    redis {
-        host = localhost //default
-        port = 6379 //default
-    }
-}
+```yaml
+grails:
+    redis:
+        host: localhost
+        port: 6379
 ```
 
 Jobs
@@ -90,84 +95,36 @@ You can run the script create-jesque-job to create a shell of a job for you auto
 following will create a BackgroundJob in the grails-app/jobs folder.
 
 ```bash
-grails create-jesque-job package.Background
+grails create-jesque-job org.grails.jesque.demo.DemoJesqueJob
 ```
 
 ```groovy
-class MyJob {
-    static queue = 'MyJesqueQueue'
-    static workerPool = 'MyWorkerPook'
+package org.grails.jesque.demo
 
-    def injectedService //auto-wired
+import groovy.util.logging.Slf4j
+
+@Slf4j
+class DemoJesqueJob {
+
+    static queue = 'DemoJesqueJobQueue'
+    static workerPool = 'DemoJesqueJobPool'
 
     static triggers = {
-        cron name: 'MyJob', cronExpression: '0 0 23 * * ? *'
+        cron name: 'DemoJesqueJobTrigger', cronExpression: '0/15 * * * * ? *'
     }
 
     def perform() {
         log.info "Executing Job"
-
-        injectedService.doSomeWork()
     }
 }
-```
-
-Unit and integration tests will also automatically be created.  If you have spock installed and listed in your application.properties
-it will create an integration specification instead of a grails integration test.
-
-
-Custom Worker and WorkerListener
-----
-You can define a custom Worker implementation via Config.groovy. This class must extend GrailsWorkerImpl,
-if not, this configuration parameter is ignored and GrailsWorkerImpl is used
-
-```groovy
-grails {
-    jesque {
-        custom {
-            worker {
-                clazz = CustomWorkerImpl
-            }
-        }
-    }
-}
-```
-
-The same works with a custom WorkerListener class. This class must implement WorkerListener, if not, it is ignored.
-
-```groovy
-grails {
-    jesque {
-        custom {
-            listener {
-                clazz = CustomWorkerListener
-            }
-        }
-    }
-}
-```
-
-To handle exceptions from jobs in a generic way you may specify a job exception handler like this:
-
-```xml
-grails {
-    jesque {
-        custom {
-            jobExceptionHandler {
-            	clazz = CustomJobExceptionHandler
-            }
-        }
-    }
-}
-
 ```
 
 Roadmap
 ----
+* Upgrade custom Listener and Worker to grails 3 support
 * Ability to execute methods on services without creating a job object
 * Wrap above ability automatically with annotation and dynamically creating a method with the same name + "Async" suffix
 * Create grails/groovy docs (gdoc?) to extensively document options
-* Support job/config changes when running as `grails run-app
 * Dynamic wake time of delayed jobs thread to reduce polling
 
 Release Notes
@@ -205,6 +162,8 @@ Release Notes
     * Remove test and hibernate dependencies
     * Updated dependencies
 * 1.0.0 - Grails 3.x
+    * Some features have not been ported over yet such as custom Worker and Listener
+    * Design was changed to use list based jobTypes instead of Map for simplicity in YAML
 
 
 License
