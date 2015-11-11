@@ -229,7 +229,11 @@ class JesqueService implements DisposableBean {
 			Map<String, Class> jobNameClass = [:]
 			jobTypes?.each { String k ->
 				def clazz = grailsApplication.getClassForName(k)
-				jobNameClass.put(clazz.simpleName, clazz)
+				if(clazz) {
+					jobNameClass.put(clazz.simpleName, clazz)
+				} else {
+					log.info "Could not get grails class $k"
+				}
 			}
 
 			workers.times {

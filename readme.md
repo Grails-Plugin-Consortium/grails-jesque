@@ -170,6 +170,7 @@ Release Notes
 * 1.0.0 - Grails 3.x
     * Some features have not been ported over yet such as custom Worker and Listener
     * Design was changed to use list based jobTypes instead of Map for simplicity in YAML
+* 1.0.1 - Bug fix for NPE
 
 
 License
