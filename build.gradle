@@ -16,7 +16,7 @@ plugins {
     id "com.jfrog.bintray" version "1.2"
 }
 
-version "1.0.2-SNAPSHOT"
+version "1.0.2"
 group "org.grails.plugins"
 
 apply plugin: 'io.spring.dependency-management'
