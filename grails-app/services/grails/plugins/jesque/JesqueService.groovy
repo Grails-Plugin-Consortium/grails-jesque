@@ -125,7 +125,7 @@ class JesqueService implements DisposableBean {
 
 	Worker startWorker(List<String> queues, Map<String, Class> jobTypes, ExceptionHandler exceptionHandler = null,
 					   boolean paused = false) {
-		log.debug "Starting worker processing queueus: ${queues}"
+		log.info "Starting worker processing queueus: ${queues}"
 
 		Class workerClass = GrailsWorkerImpl
 		def customWorkerClass = grailsApplication.config.grails.jesque.custom.worker.clazz
@@ -217,7 +217,7 @@ class JesqueService implements DisposableBean {
 			def value = jesqueConfigMap?.workers[workerPoolName]
 
 			def workers = value.workers ? value.workers.toInteger() : DEFAULT_WORKER_POOL_SIZE
-			String queueNames = value.queueNames
+			def queueNames = value.queueNames
 			List<String> jobTypes = value.jobTypes
 
 			if (!((queueNames instanceof String) || (queueNames instanceof List<String>)))
