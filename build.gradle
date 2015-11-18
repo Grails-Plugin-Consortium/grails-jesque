@@ -101,4 +101,4 @@ test {
 }
 
 
-bintrayUpload.dependsOn jar, sourcesJar, javadocJar
+bintrayUpload.dependsOn sourcesJar, javadocJar
