@@ -208,7 +208,6 @@ class JesqueService implements DisposableBean {
 	}
 
 	void startWorkersFromConfig(ConfigObject jesqueConfigMap) {
-
 		boolean startPaused = jesqueConfigMap.startPaused as boolean ?: false
 
 		jesqueConfigMap?.workers?.keySet()?.each { String workerPoolName ->
@@ -229,7 +228,7 @@ class JesqueService implements DisposableBean {
 			Map<String, Class> jobNameClass = [:]
 			jobTypes?.each { String k ->
 				def clazz = grailsApplication.getClassForName(k)
-				if(clazz) {
+				if (clazz) {
 					jobNameClass.put(clazz.simpleName, clazz)
 				} else {
 					log.info "Could not get grails class $k"
