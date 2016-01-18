@@ -83,7 +83,7 @@ bintray {
 	pkg {
 		repo = 'grails-plugins'
 		userOrg = 'ctoestreich'
-		name = "org.grails.plugins:grails-jesque"
+		name = "jesque"
 		desc = "Grails Jesque Plugin"
 		websiteUrl = "http://grails.org/plugin/grails-jesque"
 		issueTrackerUrl = "https://github.com/Grails-Plugin-Consortium/grails-jesque/issues"
