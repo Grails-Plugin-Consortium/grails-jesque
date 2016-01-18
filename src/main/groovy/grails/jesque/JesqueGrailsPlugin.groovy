@@ -18,7 +18,7 @@ import org.springframework.context.ApplicationContext
 import static grails.async.Promises.task
 
 @Slf4j
-class GrailsJesqueGrailsPlugin extends Plugin {
+class JesqueGrailsPlugin extends Plugin {
 
 	// the version or versions of Grails the plugin is designed for
 	def grailsVersion = "3.0.0 > *"
