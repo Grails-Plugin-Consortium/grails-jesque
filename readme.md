@@ -1,13 +1,13 @@
 Grails Jesque
 =============
 
-Jesque is an implementation of [Resque](https://github.com/defunkt/resque) in [Java](http://www.oracle.com/technetwork/java/index.html).
+Jesque is an implementation of [Resque](https://github.com/resque/resque) in [Java](http://www.oracle.com/technetwork/java/index.html).
 It is fully-interoperable with the [Ruby](http://www.ruby-lang.org/en/) and [Node.js](http://nodejs.org/) ([Coffee-Resque](https://github.com/technoweenie/coffee-resque)) implementations.
 
 The grails jesque plugin uses [jesque](https://github.com/gresrun/jesque) and the grails redis plugin as a dependency.
 While it uses jesque for the core functionality it makes it groovier to use in grails.
 
-There is also a grails [jesque-web](https://github.com/michaelcameron/grails-jesque-web) plugin initially ported from the [jesque-web](https://github.com/gresrun/jesque-web) spring-mvc app, which itself was based on the Sinatra web app resque-web in [resque](https://github.com/defunkt/resque).
+There is also a grails [jesque-web](https://github.com/michaelcameron/grails-jesque-web) plugin initially ported from the [jesque-web](https://github.com/gresrun/jesque-web) spring-mvc app, which itself was based on the Sinatra web app resque-web in [resque](https://github.com/resque/resque).
 Either UI will allow you to see what's in your queues and view and re-process failed messages.
 
 A scheduler (a la Quartz) has been added to support scheduled injection of jobs. The syntax is very similar to the grails Quartz plugin. 
