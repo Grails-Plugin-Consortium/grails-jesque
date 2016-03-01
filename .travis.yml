@@ -1,0 +1,11 @@
+language: groovy
+sudo: false
+jdk:
+  - oraclejdk7
+services:
+  - redis-server
+branches:
+  only:
+    - master
+
+script: ./gradlew clean check assemble
