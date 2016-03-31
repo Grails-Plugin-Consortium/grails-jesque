@@ -1,6 +1,8 @@
 Grails Jesque
 =============
 
+[![Build Status](https://travis-ci.org/Grails-Plugin-Consortium/grails-jesque.svg?branch=master)](https://travis-ci.org/Grails-Plugin-Consortium/grails-jesque)
+
 Jesque is an implementation of [Resque](https://github.com/resque/resque) in [Java](http://www.oracle.com/technetwork/java/index.html).
 It is fully-interoperable with the [Ruby](http://www.ruby-lang.org/en/) and [Node.js](http://nodejs.org/) ([Coffee-Resque](https://github.com/technoweenie/coffee-resque)) implementations.
 
