@@ -92,6 +92,17 @@ grails:
         port: 6379
 ```
 
+Or using sentinels
+
+```yaml
+grails:
+    redis:
+        sentinels:
+            - 10.0.0.1:26379
+            - 10.0.0.2:26379
+        masterName: foobar        
+```
+
 Jobs
 ----
 Jobs should be placed in grails-app/jobs similar to the [Quartz](http://grails.org/plugin/quartz) plugin.
@@ -172,6 +183,7 @@ Release Notes
     * Design was changed to use list based jobTypes instead of Map for simplicity in YAML
 * 1.0.1 - Bug fix for NPE
 * 1.0.6 - Background the starting of the jobs to speed up booting
+* 1.0.8 - Adding sentinel support
 
 
 License
