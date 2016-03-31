@@ -26,7 +26,7 @@ Add the jesque plugin to grails, it will automatically pull in jesque with it's 
 
 ```bash
 dependencies {
-    compile('org.grails.plugins:grails-jesque:1.0.2')
+    compile('org.grails.plugins:jesque:1.0.9')
 }
 ```
 
