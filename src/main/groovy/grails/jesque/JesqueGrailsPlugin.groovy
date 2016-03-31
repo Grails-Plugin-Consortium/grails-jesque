@@ -67,6 +67,10 @@ class JesqueGrailsPlugin extends Plugin {
 				jesqueConfigBuilder = jesqueConfigBuilder.withNamespace(jesqueConfigMap.namespace)
 			if (redisConfigMap.host)
 				jesqueConfigBuilder = jesqueConfigBuilder.withHost(redisConfigMap.host)
+			if (redisConfigMap.sentinels)
+				jesqueConfigBuilder = jesqueConfigBuilder.withSentinels(redisConfigMap.sentinels)
+			if (redisConfigMap.masterName)
+				jesqueConfigBuilder = jesqueConfigBuilder.withMasterName(redisConfigMap.masterName)
 			if (redisConfigMap.port)
 				jesqueConfigBuilder = jesqueConfigBuilder.withPort(redisConfigMap.port as Integer)
 			if (redisConfigMap.timeout)
@@ -78,9 +82,17 @@ class JesqueGrailsPlugin extends Plugin {
 
 			def jesqueConfigInstance = jesqueConfigBuilder.build()
 
+			if(jesqueConfigInstance.sentinels && jesqueConfigInstance.masterName){
+				log.info "Using sentinel config sentinels $jesqueConfigInstance.sentinels"
+				jesqueConfig(Config, jesqueConfigInstance.sentinels, jesqueConfigInstance.masterName, jesqueConfigInstance.timeout,
+						jesqueConfigInstance.password, jesqueConfigInstance.namespace, jesqueConfigInstance.database)
+			} else {
+				log.info "Using redis config host $jesqueConfigInstance.host"
+				jesqueConfig(Config, jesqueConfigInstance.host, jesqueConfigInstance.port, jesqueConfigInstance.timeout,
+						jesqueConfigInstance.password, jesqueConfigInstance.namespace, jesqueConfigInstance.database)
+			}
+
 			jesqueAdminClient(AdminClientImpl, ref('jesqueConfig'))
-			jesqueConfig(Config, jesqueConfigInstance.host, jesqueConfigInstance.port, jesqueConfigInstance.timeout,
-					jesqueConfigInstance.password, jesqueConfigInstance.namespace, jesqueConfigInstance.database)
 			jesqueClient(ClientPoolImpl, jesqueConfigInstance, ref('redisPool'))
 
 			failureDao(FailureDAORedisImpl, ref('jesqueConfig'), ref('redisPool'))
