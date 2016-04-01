@@ -185,7 +185,7 @@ Release Notes
     * Design was changed to use list based jobTypes instead of Map for simplicity in YAML
 * 1.0.1 - Bug fix for NPE
 * 1.0.6 - Background the starting of the jobs to speed up booting
-* 1.0.9 - Adding sentinel support
+* 1.1.0 - Adding sentinel support
 
 
 License
