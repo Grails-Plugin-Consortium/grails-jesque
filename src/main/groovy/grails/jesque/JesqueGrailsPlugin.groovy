@@ -6,7 +6,6 @@ import grails.plugins.jesque.*
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Config
 import net.greghaines.jesque.ConfigBuilder
-import net.greghaines.jesque.admin.AdminClientImpl
 import net.greghaines.jesque.client.ClientPoolImpl
 import net.greghaines.jesque.meta.dao.impl.FailureDAORedisImpl
 import net.greghaines.jesque.meta.dao.impl.KeysDAORedisImpl
@@ -113,7 +112,7 @@ class JesqueGrailsPlugin extends Plugin {
                         jesqueConfigInstance.password, jesqueConfigInstance.namespace, jesqueConfigInstance.database)
             }
 
-            jesqueAdminClient(grails.plugins.jesque.AdminClientImpl, ref('jesqueConfig'), ref('redisPool'))
+            jesqueAdminClient(AdminClientImpl, ref('jesqueConfig'), ref('redisPool'))
             jesqueClient(ClientPoolImpl, jesqueConfigInstance, ref('redisPool'))
 
             failureDao(FailureDAORedisImpl, ref('jesqueConfig'), ref('redisPool'))
