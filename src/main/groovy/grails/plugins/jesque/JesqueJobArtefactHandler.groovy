@@ -3,9 +3,7 @@ package grails.plugins.jesque
 import grails.core.ArtefactHandlerAdapter
 import org.codehaus.groovy.ast.ClassNode
 import org.grails.compiler.injection.GrailsASTUtils
-import org.springframework.util.ReflectionUtils
 
-import java.lang.reflect.Method
 import java.util.regex.Pattern
 
 import static org.grails.io.support.GrailsResourceUtils.GRAILS_APP_DIR
@@ -39,12 +37,8 @@ public class JesqueJobArtefactHandler extends ArtefactHandlerAdapter {
     boolean isArtefactClass(Class clazz) {
         // class shouldn't be null and should ends with Job suffix
         if (clazz == null || !clazz.getName().endsWith(JOB)) return false
-        // and should have one of execute() or execute(JobExecutionContext) methods defined
-        Method method = ReflectionUtils.findMethod(clazz, PERFORM)
-        if (method == null) {
-            // we're using Object as a param here to allow groovy-style 'def execute(param)' method
-            method = ReflectionUtils.findMethod(clazz, PERFORM, [Object] as Class[])
-        }
-        method != null
+
+        // and should have the perform method
+        clazz.methods.find { it.name == PERFORM } != null
     }
 }
