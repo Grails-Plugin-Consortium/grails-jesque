@@ -188,7 +188,7 @@ Release Notes
 * 1.0.6 - Background the starting of the jobs to speed up booting
 * 1.1.0 - Adding sentinel support
 * 1.1.2 - Bug fix for wiring jobs
-* 1.1.3 - Bug fix for worker persistence context
+* 1.1.4 - Bug fix for worker persistence context
 
 
 License
