@@ -1,72 +1,54 @@
 package grails.plugins.jesque
 
 import grails.persistence.support.PersistenceContextInterceptor
-import net.greghaines.jesque.worker.WorkerListener
-import net.greghaines.jesque.worker.WorkerEvent
-import net.greghaines.jesque.worker.Worker
+import groovy.util.logging.Log
 import net.greghaines.jesque.Job
-import org.apache.commons.logging.LogFactory
+import net.greghaines.jesque.worker.Worker
+import net.greghaines.jesque.worker.WorkerEvent
+import net.greghaines.jesque.worker.WorkerListener
 
+@Log
 class WorkerPersistenceListener implements WorkerListener {
 
     PersistenceContextInterceptor persistenceInterceptor
-    //todo: why is this global?
-    private boolean boundByMe = false
-    static log = LogFactory.getLog(WorkerPersistenceListener)
+    boolean initiated = false
+    boolean autoFlush
 
-    WorkerPersistenceListener(PersistenceContextInterceptor persistenceInterceptor) {
+    WorkerPersistenceListener(PersistenceContextInterceptor persistenceInterceptor, boolean autoFlush) {
         this.persistenceInterceptor = persistenceInterceptor
+        this.autoFlush = autoFlush
     }
 
     private boolean bindSession() {
-        boolean boundByMe = false
-        if(persistenceInterceptor == null)
-            throw new IllegalStateException("No persistenceInterceptor property provided")
+        if (persistenceInterceptor == null)
+            throw new IllegalStateException("No persistenceInterceptor found");
 
-        log.debug("Binding session")
+        log.fine("Binding session")
 
-        if( persistenceInterceptor.isOpen() ) {
-            boundByMe = true
+        if (!initiated) {
             persistenceInterceptor.init()
         }
-        boundByMe
+        true
     }
 
     private void unbindSession() {
-        if(persistenceInterceptor == null)
-            throw new IllegalStateException("No persistenceInterceptor property provided")
-
-        log.debug("Unbinding session")
-
-        if( boundByMe ) {
-            try {
+        if (initiated) {
+            if (autoFlush) {
                 persistenceInterceptor.flush()
-            } catch(Exception exception) {
-                fireThreadException(exception)
-            } finally {
-                persistenceInterceptor.destroy()
             }
-        }
-    }
-
-    private static void fireThreadException(final Exception exception) {
-        final Thread thread = Thread.currentThread()
-        if (thread.uncaughtExceptionHandler == null) {
-            //Logging the problem that the current thread doesn't have an uncaught exception handler set.
-            //Bare throwing an exception might not have any effect in such a case.
-            final String message = "No handler property provided for the current background worker thread ${thread.name} when trying to handle an exception."
-            log.error(message, exception)
+            persistenceInterceptor.destroy()
+            initiated = false
         } else {
-            thread.uncaughtExceptionHandler.uncaughtException(thread, exception)
+            log.fine("persistenceInterceptor has never been initialised")
         }
     }
 
     @Override
     void onEvent(WorkerEvent workerEvent, Worker worker, String queue, Job job, Object runner, Object result, Throwable t) {
-        log.debug("Processing worker event ${workerEvent.name()}")
-        if( workerEvent == WorkerEvent.JOB_EXECUTE ) {
-            boundByMe = bindSession()
-        } else if( workerEvent in [WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE]) {
+        log.fine("Processing worker event ${workerEvent.name()}")
+        if (workerEvent == WorkerEvent.JOB_EXECUTE) {
+            initiated = bindSession()
+        } else if (workerEvent in [WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE]) {
             unbindSession()
         }
     }
