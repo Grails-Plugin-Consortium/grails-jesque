@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/grails-jesque.iml" filepath="$PROJECT_DIR$/grails-jesque.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/jesque.iml" filepath="$PROJECT_DIR$/.idea/modules/jesque.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/jesque_ast.iml" filepath="$PROJECT_DIR$/.idea/modules/jesque_ast.iml" group="jesque" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/jesque_main.iml" filepath="$PROJECT_DIR$/.idea/modules/jesque_main.iml" group="jesque" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/jesque_test.iml" filepath="$PROJECT_DIR$/.idea/modules/jesque_test.iml" group="jesque" />
     </modules>
   </component>
 </project>
