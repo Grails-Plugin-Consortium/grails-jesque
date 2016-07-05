@@ -186,6 +186,8 @@ Release Notes
 * 1.0.1 - Bug fix for NPE
 * 1.0.6 - Background the starting of the jobs to speed up booting
 * 1.1.0 - Adding sentinel support
+* 1.1.1 - Bug fixes
+* 1.1.2 - Fixng sentinel support
 
 
 License

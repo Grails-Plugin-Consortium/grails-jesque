@@ -33,6 +33,7 @@ class JesqueService implements DisposableBean {
 	WorkerInfoDAO workerInfoDao
 	List<Worker> workers = Collections.synchronizedList([])
 	AdminClient jesqueAdminClient
+	def redisPool
 
 	void enqueue(String queueName, Job job) {
 		jesqueClient.enqueue(queueName, job)
@@ -136,7 +137,7 @@ class JesqueService implements DisposableBean {
 				log.warn("The specified custom worker class ${customWorkerClass} does not extend GrailsWorkerImpl. Ignoring it")
 			}
 		}
-		Worker worker = (Worker) workerClass.newInstance(grailsApplication, jesqueConfig, queues, jobTypes)
+		Worker worker = (Worker) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
 
 		def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
 		if (customListenerClass) {
