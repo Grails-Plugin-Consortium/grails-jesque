@@ -166,7 +166,7 @@ class JesqueService implements DisposableBean {
 		workers.add(worker)
 
 		// create an Admin for this worker (makes it possible to administer across a cluster)
-		Admin admin = new AdminImpl(jesqueConfig)
+		Admin admin = new AdminClientImpl(jesqueConfig, redisPool) as Admin
 		admin.setWorker(worker)
 
 		def autoFlush = grailsApplication.config.grails.jesque.autoFlush ?: true

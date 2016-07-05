@@ -189,7 +189,8 @@ Release Notes
 * 1.1.0 - Adding sentinel support
 * 1.1.2 - Bug fix for wiring jobs
 * 1.1.4 - Bug fix for worker persistence context
-* 1.1.5 - Fixng sentinel support
+* 1.1.5 - Fixing sentinel support
+* 1.1.6 - Fixing sentinel support (again)
 
 
 License
