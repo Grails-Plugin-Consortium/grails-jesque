@@ -6,7 +6,6 @@ import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Job
 import net.greghaines.jesque.admin.Admin
 import net.greghaines.jesque.admin.AdminClient
-import net.greghaines.jesque.admin.AdminImpl
 import net.greghaines.jesque.client.Client
 import net.greghaines.jesque.meta.WorkerInfo
 import net.greghaines.jesque.meta.dao.WorkerInfoDAO
@@ -20,284 +19,284 @@ import org.springframework.beans.factory.DisposableBean
 @Slf4j
 class JesqueService implements DisposableBean {
 
-	static transactional = false
-	static scope = 'singleton'
+    static transactional = false
+    static scope = 'singleton'
 
-	static final int DEFAULT_WORKER_POOL_SIZE = 3
+    static final int DEFAULT_WORKER_POOL_SIZE = 3
 
-	GrailsApplication grailsApplication
-	def jesqueConfig
-	def jesqueDelayedJobService
-	PersistenceContextInterceptor persistenceInterceptor
-	Client jesqueClient
-	WorkerInfoDAO workerInfoDao
-	List<Worker> workers = Collections.synchronizedList([])
-	AdminClient jesqueAdminClient
-	def redisPool
+    GrailsApplication grailsApplication
+    def jesqueConfig
+    def jesqueDelayedJobService
+    PersistenceContextInterceptor persistenceInterceptor
+    Client jesqueClient
+    WorkerInfoDAO workerInfoDao
+    List<Worker> workers = Collections.synchronizedList([])
+    AdminClient jesqueAdminClient
+    def redisPool
 
-	void enqueue(String queueName, Job job) {
-		jesqueClient.enqueue(queueName, job)
-	}
+    void enqueue(String queueName, Job job) {
+        jesqueClient.enqueue(queueName, job)
+    }
 
-	void enqueue(String queueName, String jobName, List args) {
-		enqueue(queueName, new Job(jobName, args))
-	}
+    void enqueue(String queueName, String jobName, List args) {
+        enqueue(queueName, new Job(jobName, args))
+    }
 
-	void enqueue(String queueName, Class jobClazz, List args) {
-		enqueue(queueName, jobClazz.simpleName, args)
-	}
+    void enqueue(String queueName, Class jobClazz, List args) {
+        enqueue(queueName, jobClazz.simpleName, args)
+    }
 
-	void enqueue(String queueName, String jobName, Object... args) {
-		enqueue(queueName, new Job(jobName, args))
-	}
+    void enqueue(String queueName, String jobName, Object... args) {
+        enqueue(queueName, new Job(jobName, args))
+    }
 
-	void enqueue(String queueName, Class jobClazz, Object... args) {
-		enqueue(queueName, jobClazz.simpleName, args)
-	}
+    void enqueue(String queueName, Class jobClazz, Object... args) {
+        enqueue(queueName, jobClazz.simpleName, args)
+    }
 
-	void priorityEnqueue(String queueName, Job job) {
-		jesqueClient.priorityEnqueue(queueName, job)
-	}
+    void priorityEnqueue(String queueName, Job job) {
+        jesqueClient.priorityEnqueue(queueName, job)
+    }
 
-	void priorityEnqueue(String queueName, String jobName, def args) {
-		priorityEnqueue(queueName, new Job(jobName, args))
-	}
+    void priorityEnqueue(String queueName, String jobName, def args) {
+        priorityEnqueue(queueName, new Job(jobName, args))
+    }
 
-	void priorityEnqueue(String queueName, Class jobClazz, def args) {
-		priorityEnqueue(queueName, jobClazz.simpleName, args)
-	}
+    void priorityEnqueue(String queueName, Class jobClazz, def args) {
+        priorityEnqueue(queueName, jobClazz.simpleName, args)
+    }
 
-	void enqueueAt(DateTime dateTime, String queueName, Job job) {
-		jesqueDelayedJobService.enqueueAt(dateTime, queueName, job)
-	}
+    void enqueueAt(DateTime dateTime, String queueName, Job job) {
+        jesqueDelayedJobService.enqueueAt(dateTime, queueName, job)
+    }
 
-	void enqueueAt(DateTime dateTime, String queueName, String jobName, Object... args) {
-		enqueueAt(dateTime, queueName, new Job(jobName, args))
-	}
+    void enqueueAt(DateTime dateTime, String queueName, String jobName, Object... args) {
+        enqueueAt(dateTime, queueName, new Job(jobName, args))
+    }
 
-	void enqueueAt(DateTime dateTime, String queueName, Class jobClazz, Object... args) {
-		enqueueAt(dateTime, queueName, jobClazz.simpleName, args)
-	}
+    void enqueueAt(DateTime dateTime, String queueName, Class jobClazz, Object... args) {
+        enqueueAt(dateTime, queueName, jobClazz.simpleName, args)
+    }
 
-	void enqueueAt(DateTime dateTime, String queueName, String jobName, List args) {
-		enqueueAt(dateTime, queueName, new Job(jobName, args))
-	}
+    void enqueueAt(DateTime dateTime, String queueName, String jobName, List args) {
+        enqueueAt(dateTime, queueName, new Job(jobName, args))
+    }
 
-	void enqueueAt(DateTime dateTime, String queueName, Class jobClazz, List args) {
-		enqueueAt(dateTime, queueName, jobClazz.simpleName, args)
-	}
-
-
-	void enqueueIn(Integer millisecondDelay, String queueName, Job job) {
-		enqueueAt(new DateTime().plusMillis(millisecondDelay), queueName, job)
-	}
-
-	void enqueueIn(Integer millisecondDelay, String queueName, String jobName, Object... args) {
-		enqueueIn(millisecondDelay, queueName, new Job(jobName, args))
-	}
-
-	void enqueueIn(Integer millisecondDelay, String queueName, Class jobClazz, Object... args) {
-		enqueueIn(millisecondDelay, queueName, jobClazz.simpleName, args)
-	}
-
-	void enqueueIn(Integer millisecondDelay, String queueName, String jobName, List args) {
-		enqueueIn(millisecondDelay, queueName, new Job(jobName, args))
-	}
-
-	void enqueueIn(Integer millisecondDelay, String queueName, Class jobClazz, List args) {
-		enqueueIn(millisecondDelay, queueName, jobClazz.simpleName, args)
-	}
+    void enqueueAt(DateTime dateTime, String queueName, Class jobClazz, List args) {
+        enqueueAt(dateTime, queueName, jobClazz.simpleName, args)
+    }
 
 
-	Worker startWorker(String queueName, String jobName, Class jobClass, ExceptionHandler exceptionHandler = null,
-					   boolean paused = false) {
-		startWorker([queueName], [(jobName): jobClass], exceptionHandler, paused)
-	}
+    void enqueueIn(Integer millisecondDelay, String queueName, Job job) {
+        enqueueAt(new DateTime().plusMillis(millisecondDelay), queueName, job)
+    }
 
-	Worker startWorker(List queueName, String jobName, Class jobClass, ExceptionHandler exceptionHandler = null,
-					   boolean paused = false) {
-		startWorker(queueName, [(jobName): jobClass], exceptionHandler, paused)
-	}
+    void enqueueIn(Integer millisecondDelay, String queueName, String jobName, Object... args) {
+        enqueueIn(millisecondDelay, queueName, new Job(jobName, args))
+    }
 
-	Worker startWorker(String queueName, Map<String, ? extends Class> jobTypes, ExceptionHandler exceptionHandler = null,
-					   boolean paused = false) {
-		startWorker([queueName], jobTypes, exceptionHandler, paused)
-	}
+    void enqueueIn(Integer millisecondDelay, String queueName, Class jobClazz, Object... args) {
+        enqueueIn(millisecondDelay, queueName, jobClazz.simpleName, args)
+    }
 
-	Worker startWorker(List<String> queues, Map<String, Class> jobTypes, ExceptionHandler exceptionHandler = null,
-					   boolean paused = false) {
-		log.info "Starting worker processing queueus: ${queues}"
+    void enqueueIn(Integer millisecondDelay, String queueName, String jobName, List args) {
+        enqueueIn(millisecondDelay, queueName, new Job(jobName, args))
+    }
 
-		Class workerClass = GrailsWorkerImpl
-		def customWorkerClass = grailsApplication.config.grails.jesque.custom.worker.clazz
-		if (customWorkerClass) {
-			if (customWorkerClass in GrailsWorkerImpl) {
-				workerClass = customWorkerClass as Class
-			} else {
-				log.warn("The specified custom worker class ${customWorkerClass} does not extend GrailsWorkerImpl. Ignoring it")
-			}
-		}
-		Worker worker = (Worker) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
+    void enqueueIn(Integer millisecondDelay, String queueName, Class jobClazz, List args) {
+        enqueueIn(millisecondDelay, queueName, jobClazz.simpleName, args)
+    }
 
-		def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
-		if (customListenerClass) {
-			if (customListenerClass in WorkerListener) {
-				worker.getWorkerEventEmitter().addListener(customListenerClass.newInstance() as WorkerListener)
-			} else {
-				log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
-			}
-		}
 
-		def customJobExceptionHandler = grailsApplication.config.grails.jesque.custom.jobExceptionHandler.clazz
-		if (customJobExceptionHandler) {
-			if (customJobExceptionHandler in JobExceptionHandler)
-				worker.jobExceptionHandler = customJobExceptionHandler.newInstance() as JobExceptionHandler
-			else
-				log.warn("The specified custom job exception handler class does not implement JobExceptionHandler. Ignoring it")
-		}
+    Worker startWorker(String queueName, String jobName, Class jobClass, ExceptionHandler exceptionHandler = null,
+                       boolean paused = false) {
+        startWorker([queueName], [(jobName): jobClass], exceptionHandler, paused)
+    }
 
-		if (exceptionHandler)
-			worker.exceptionHandler = exceptionHandler
+    Worker startWorker(List queueName, String jobName, Class jobClass, ExceptionHandler exceptionHandler = null,
+                       boolean paused = false) {
+        startWorker(queueName, [(jobName): jobClass], exceptionHandler, paused)
+    }
 
-		if (paused) {
-			worker.togglePause(paused)
-		}
+    Worker startWorker(String queueName, Map<String, ? extends Class> jobTypes, ExceptionHandler exceptionHandler = null,
+                       boolean paused = false) {
+        startWorker([queueName], jobTypes, exceptionHandler, paused)
+    }
 
-		workers.add(worker)
+    Worker startWorker(List<String> queues, Map<String, Class> jobTypes, ExceptionHandler exceptionHandler = null,
+                       boolean paused = false) {
+        log.info "Starting worker processing queueus: ${queues}"
 
-		// create an Admin for this worker (makes it possible to administer across a cluster)
-		Admin admin = new AdminClientImpl(jesqueConfig, redisPool) as Admin
-		admin.setWorker(worker)
+        Class workerClass = GrailsWorkerImpl
+        def customWorkerClass = grailsApplication.config.grails.jesque.custom.worker.clazz
+        if (customWorkerClass) {
+            if (customWorkerClass in GrailsWorkerImpl) {
+                workerClass = customWorkerClass as Class
+            } else {
+                log.warn("The specified custom worker class ${customWorkerClass} does not extend GrailsWorkerImpl. Ignoring it")
+            }
+        }
+        Worker worker = (Worker) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
 
-		def autoFlush = grailsApplication.config.grails.jesque.autoFlush ?: true
-		def workerPersistenceListener = new WorkerPersistenceListener(persistenceInterceptor, autoFlush)
-		worker.getWorkerEventEmitter().addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
+        def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
+        if (customListenerClass) {
+            if (customListenerClass in WorkerListener) {
+                worker.getWorkerEventEmitter().addListener(customListenerClass.newInstance() as WorkerListener)
+            } else {
+                log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
+            }
+        }
 
-		def workerLifeCycleListener = new WorkerLifecycleListener(this)
-		worker.getWorkerEventEmitter().addListener(workerLifeCycleListener, WorkerEvent.WORKER_STOP)
+        def customJobExceptionHandler = grailsApplication.config.grails.jesque.custom.jobExceptionHandler.clazz
+        if (customJobExceptionHandler) {
+            if (customJobExceptionHandler in JobExceptionHandler)
+                worker.jobExceptionHandler = customJobExceptionHandler.newInstance() as JobExceptionHandler
+            else
+                log.warn("The specified custom job exception handler class does not implement JobExceptionHandler. Ignoring it")
+        }
 
-		def workerThread = new Thread(worker)
-		workerThread.start()
+        if (exceptionHandler)
+            worker.exceptionHandler = exceptionHandler
 
-		def adminThread = new Thread(admin)
-		adminThread.start()
+        if (paused) {
+            worker.togglePause(paused)
+        }
 
-		worker
-	}
+        workers.add(worker)
 
-	void stopAllWorkers() {
-		log.info "Stopping ${workers.size()} jesque workers"
+        // create an Admin for this worker (makes it possible to administer across a cluster)
+        Admin admin = new AdminImpl(jesqueConfig, redisPool)
+        admin.setWorker(worker)
 
-		List<Worker> workersToRemove = workers.collect { it }
-		workersToRemove.each { Worker worker ->
-			try {
-				log.debug "Stopping worker processing queues: ${worker.queues}"
-				worker.end(true)
-				worker.join(5000)
-			} catch (Exception exception) {
-				log.error "Exception ending jesque worker", exception
-			}
-		}
-	}
+        def autoFlush = grailsApplication.config.grails.jesque.autoFlush ?: true
+        def workerPersistenceListener = new WorkerPersistenceListener(persistenceInterceptor, autoFlush)
+        worker.getWorkerEventEmitter().addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
 
-	void withWorker(String queueName, String jobName, Class jobClassName, Closure closure) {
-		def worker = startWorker(queueName, jobName, jobClassName)
-		try {
-			closure()
-		} finally {
-			worker.end(true)
-		}
-	}
+        def workerLifeCycleListener = new WorkerLifecycleListener(this)
+        worker.getWorkerEventEmitter().addListener(workerLifeCycleListener, WorkerEvent.WORKER_STOP)
 
-	void startWorkersFromConfig(ConfigObject jesqueConfigMap) {
-		boolean startPaused = jesqueConfigMap.startPaused as boolean ?: false
+        def workerThread = new Thread(worker)
+        workerThread.start()
 
-		jesqueConfigMap?.workers?.keySet()?.each { String workerPoolName ->
+        def adminThread = new Thread(admin)
+        adminThread.start()
 
-			log.info "Starting workers for pool $workerPoolName"
-			def value = jesqueConfigMap?.workers[workerPoolName]
+        worker
+    }
 
-			def workers = value.workers ? value.workers.toInteger() : DEFAULT_WORKER_POOL_SIZE
-			def queueNames = value.queueNames
-			List<String> jobTypes = value.jobTypes
+    void stopAllWorkers() {
+        log.info "Stopping ${workers.size()} jesque workers"
 
-			if (!((queueNames instanceof String) || (queueNames instanceof List<String>)))
-				throw new Exception("Invalid queueNames for pool $workerPoolName, expecting must be a String or a List<String>.")
+        List<Worker> workersToRemove = workers.collect { it }
+        workersToRemove.each { Worker worker ->
+            try {
+                log.debug "Stopping worker processing queues: ${worker.queues}"
+                worker.end(true)
+                worker.join(5000)
+            } catch (Exception exception) {
+                log.error "Exception ending jesque worker", exception
+            }
+        }
+    }
 
-			if (!(jobTypes instanceof List))
-				throw new Exception("Invalid jobTypes (${jobTypes}) for pool $workerPoolName, must be a list")
+    void withWorker(String queueName, String jobName, Class jobClassName, Closure closure) {
+        def worker = startWorker(queueName, jobName, jobClassName)
+        try {
+            closure()
+        } finally {
+            worker.end(true)
+        }
+    }
 
-			Map<String, Class> jobNameClass = [:]
-			jobTypes?.each { String k ->
-				def clazz = grailsApplication.getClassForName(k)
-				if (clazz) {
-					jobNameClass.put(clazz.simpleName, clazz)
-				} else {
-					log.info "Could not get grails class $k"
-				}
-			}
+    void startWorkersFromConfig(ConfigObject jesqueConfigMap) {
+        boolean startPaused = jesqueConfigMap.startPaused as boolean ?: false
 
-			workers.times {
-				startWorker(queueNames, jobNameClass, null, startPaused)
-			}
-		}
-	}
+        jesqueConfigMap?.workers?.keySet()?.each { String workerPoolName ->
 
-	void pruneWorkers() {
-		def hostName = InetAddress.localHost.hostName
-		workerInfoDao.allWorkers?.each { WorkerInfo workerInfo ->
-			if (workerInfo.host == hostName) {
-				log.debug "Removing stale worker $workerInfo.name"
-				workerInfoDao.removeWorker(workerInfo.name)
-			}
-		}
-	}
+            log.info "Starting workers for pool $workerPoolName"
+            def value = jesqueConfigMap?.workers[workerPoolName]
 
-	public void removeWorkerFromLifecycleTracking(Worker worker) {
-		log.debug "Removing worker ${worker.name} from lifecycle tracking"
-		workers.remove(worker)
-	}
+            def workers = value.workers ? value.workers.toInteger() : DEFAULT_WORKER_POOL_SIZE
+            def queueNames = value.queueNames
+            List<String> jobTypes = value.jobTypes
 
-	void destroy() throws Exception {
-		this.stopAllWorkers()
-	}
+            if (!((queueNames instanceof String) || (queueNames instanceof List<String>)))
+                throw new Exception("Invalid queueNames for pool $workerPoolName, expecting must be a String or a List<String>.")
 
-	void pauseAllWorkersOnThisNode() {
-		log.info "Pausing all ${workers.size()} jesque workers on this node"
+            if (!(jobTypes instanceof List))
+                throw new Exception("Invalid jobTypes (${jobTypes}) for pool $workerPoolName, must be a list")
 
-		List<Worker> workersToPause = workers.collect { it }
-		workersToPause.each { Worker worker ->
-			log.debug "Pausing worker processing queues: ${worker.queues}"
-			worker.togglePause(true)
-		}
-	}
+            Map<String, Class> jobNameClass = [:]
+            jobTypes?.each { String k ->
+                def clazz = grailsApplication.getClassForName(k)
+                if (clazz) {
+                    jobNameClass.put(clazz.simpleName, clazz)
+                } else {
+                    log.info "Could not get grails class $k"
+                }
+            }
 
-	void resumeAllWorkersOnThisNode() {
-		log.info "Resuming all ${workers.size()} jesque workers on this node"
+            workers.times {
+                startWorker(queueNames, jobNameClass, null, startPaused)
+            }
+        }
+    }
 
-		List<Worker> workersToPause = workers.collect { it }
-		workersToPause.each { Worker worker ->
-			log.debug "Resuming worker processing queues: ${worker.queues}"
-			worker.togglePause(false)
-		}
-	}
+    void pruneWorkers() {
+        def hostName = InetAddress.localHost.hostName
+        workerInfoDao.allWorkers?.each { WorkerInfo workerInfo ->
+            if (workerInfo.host == hostName) {
+                log.debug "Removing stale worker $workerInfo.name"
+                workerInfoDao.removeWorker(workerInfo.name)
+            }
+        }
+    }
 
-	void pauseAllWorkersInCluster() {
-		log.debug "Pausing all workers in the cluster"
-		jesqueAdminClient.togglePausedWorkers(true)
-	}
+    public void removeWorkerFromLifecycleTracking(Worker worker) {
+        log.debug "Removing worker ${worker.name} from lifecycle tracking"
+        workers.remove(worker)
+    }
 
-	void resumeAllWorkersInCluster() {
-		log.debug "Resuming all workers in the cluster"
-		jesqueAdminClient.togglePausedWorkers(false)
-	}
+    void destroy() throws Exception {
+        this.stopAllWorkers()
+    }
 
-	void shutdownAllWorkersInCluster() {
-		log.debug "Shutting down all workers in the cluster"
-		jesqueAdminClient.shutdownWorkers(true)
-	}
+    void pauseAllWorkersOnThisNode() {
+        log.info "Pausing all ${workers.size()} jesque workers on this node"
 
-	boolean areAllWorkersInClusterPaused() {
-		return workerInfoDao.getActiveWorkerCount() == 0
-	}
+        List<Worker> workersToPause = workers.collect { it }
+        workersToPause.each { Worker worker ->
+            log.debug "Pausing worker processing queues: ${worker.queues}"
+            worker.togglePause(true)
+        }
+    }
+
+    void resumeAllWorkersOnThisNode() {
+        log.info "Resuming all ${workers.size()} jesque workers on this node"
+
+        List<Worker> workersToPause = workers.collect { it }
+        workersToPause.each { Worker worker ->
+            log.debug "Resuming worker processing queues: ${worker.queues}"
+            worker.togglePause(false)
+        }
+    }
+
+    void pauseAllWorkersInCluster() {
+        log.debug "Pausing all workers in the cluster"
+        jesqueAdminClient.togglePausedWorkers(true)
+    }
+
+    void resumeAllWorkersInCluster() {
+        log.debug "Resuming all workers in the cluster"
+        jesqueAdminClient.togglePausedWorkers(false)
+    }
+
+    void shutdownAllWorkersInCluster() {
+        log.debug "Shutting down all workers in the cluster"
+        jesqueAdminClient.shutdownWorkers(true)
+    }
+
+    boolean areAllWorkersInClusterPaused() {
+        return workerInfoDao.getActiveWorkerCount() == 0
+    }
 }

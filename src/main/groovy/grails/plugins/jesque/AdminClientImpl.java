@@ -3,6 +3,7 @@ package grails.plugins.jesque;
 import net.greghaines.jesque.Config;
 import net.greghaines.jesque.admin.AbstractAdminClient;
 import net.greghaines.jesque.admin.AdminClient;
+import net.greghaines.jesque.worker.Worker;
 import redis.clients.jedis.Jedis;
 import redis.clients.util.Pool;
 
