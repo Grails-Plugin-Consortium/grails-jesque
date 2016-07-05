@@ -41,8 +41,8 @@ class JesqueGrailsPlugin extends Plugin {
             [name: "Michael Cameron", email: "michael.e.cameron@gmail.com"],
             [name: "Christian Oestreich", email: "acetrike@gmail.com"],
             [name: "Ted Naleid", email: "contact@naleid.com"],
-            [name: "Philipp Eschenbach", email: "peh@kunstsysteme.com"],
-            [name: "Florian Langenhahn", email: "fln@kunstsysteme.com"]]
+            [name: "Philipp Eschenbach", email: "philipp@uberall.com"],
+            [name: "Florian Langenhahn", email: "florian.langenhahn@uberall.com"]]
     def documentation = "https://github.com/Grails-Plugin-Consortium/grails-jesque"
     def scm = [url: "https://github.com/Grails-Plugin-Consortium/grails-jesque"]
 
@@ -155,44 +155,48 @@ class JesqueGrailsPlugin extends Plugin {
             return
 
         task {
-            TriggersConfigBuilder.metaClass.getGrailsApplication = { -> grailsApplication }
+            try {
+                TriggersConfigBuilder.metaClass.getGrailsApplication = { -> grailsApplication }
 
-            JesqueConfigurationService jesqueConfigurationService = applicationContext.jesqueConfigurationService
+                JesqueConfigurationService jesqueConfigurationService = applicationContext.jesqueConfigurationService
 
-            log.info "Scheduling Jesque Jobs"
-            grailsApplication.jesqueJobClasses.each { GrailsJesqueJobClass jobClass ->
-                jesqueConfigurationService.scheduleJob(jobClass)
-            }
+                log.info "Scheduling Jesque Jobs"
+                grailsApplication.jesqueJobClasses.each { GrailsJesqueJobClass jobClass ->
+                    jesqueConfigurationService.scheduleJob(jobClass)
+                }
 
-            def jesqueConfigMap = grailsApplication.config.grails.jesque
+                def jesqueConfigMap = grailsApplication.config.grails.jesque
 
-            if (jesqueConfigMap.schedulerThreadActive) {
-                log.info "Launching jesque scheduler thread"
-                JesqueSchedulerThreadService jesqueSchedulerThreadService = applicationContext.jesqueSchedulerThreadService
-                jesqueSchedulerThreadService.startSchedulerThread()
-            }
-            if (jesqueConfigMap.delayedJobThreadActive) {
-                log.info "Launching delayed job thread"
-                JesqueDelayedJobThreadService jesqueDelayedJobThreadService = applicationContext.jesqueDelayedJobThreadService
-                jesqueDelayedJobThreadService.startThread()
-            }
+                if (jesqueConfigMap.schedulerThreadActive) {
+                    log.info "Launching jesque scheduler thread"
+                    JesqueSchedulerThreadService jesqueSchedulerThreadService = applicationContext.jesqueSchedulerThreadService
+                    jesqueSchedulerThreadService.startSchedulerThread()
+                }
+                if (jesqueConfigMap.delayedJobThreadActive) {
+                    log.info "Launching delayed job thread"
+                    JesqueDelayedJobThreadService jesqueDelayedJobThreadService = applicationContext.jesqueDelayedJobThreadService
+                    jesqueDelayedJobThreadService.startThread()
+                }
 
-            log.info "Starting jesque workers"
-            JesqueService jesqueService = applicationContext.jesqueService
+                log.info "Starting jesque workers"
+                JesqueService jesqueService = applicationContext.jesqueService
 
-            jesqueConfigurationService.validateConfig(jesqueConfigMap as ConfigObject)
+                jesqueConfigurationService.validateConfig(jesqueConfigMap as ConfigObject)
 
-            log.info "Found ${jesqueConfigMap.size()} workers"
-            if (jesqueConfigMap.pruneWorkersOnStartup) {
-                log.info "Pruning workers"
-                jesqueService.pruneWorkers()
-            }
+                log.info "Found ${jesqueConfigMap.size()} workers"
+                if (jesqueConfigMap.pruneWorkersOnStartup) {
+                    log.info "Pruning workers"
+                    jesqueService.pruneWorkers()
+                }
 
-            jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
-            if (jesqueConfigMap.createWorkersOnStartup) {
-                log.info "Creating workers"
+                jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
+                if (jesqueConfigMap.createWorkersOnStartup) {
+                    log.info "Creating workers"
 
-                jesqueService.startWorkersFromConfig(jesqueConfigMap as ConfigObject)
+                    jesqueService.startWorkersFromConfig(jesqueConfigMap as ConfigObject)
+                }
+            } catch (Exception e) {
+                log.error "Initializing Jesque failed", e
             }
         }
 

@@ -169,7 +169,8 @@ class JesqueService implements DisposableBean {
 		Admin admin = new AdminImpl(jesqueConfig)
 		admin.setWorker(worker)
 
-		def workerPersistenceListener = new WorkerPersistenceListener(persistenceInterceptor)
+		def autoFlush = grailsApplication.config.grails.jesque.autoFlush ?: true
+		def workerPersistenceListener = new WorkerPersistenceListener(persistenceInterceptor, autoFlush)
 		worker.getWorkerEventEmitter().addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
 
 		def workerLifeCycleListener = new WorkerLifecycleListener(this)
