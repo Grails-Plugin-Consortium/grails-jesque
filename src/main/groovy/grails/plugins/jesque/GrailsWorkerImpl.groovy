@@ -82,7 +82,7 @@ class GrailsWorkerImpl extends WorkerImpl {
     }
 
     protected void execute(final Job job, final String curQueue, final Object instance, final Object[] args) {
-        this.jedis.set(key(WORKER, this.name), statusMsg(curQueue, job))
+        this.jedisClient.set(key(WORKER, this.name), statusMsg(curQueue, job))
         try {
             log.info "Running perform on instance ${job.className}"
             final Object result
@@ -90,55 +90,8 @@ class GrailsWorkerImpl extends WorkerImpl {
             result = instance.perform(*args)
             success(job, instance, result, curQueue)
         } finally {
-            this.jedis.del(key(WORKER, this.name))
+            this.jedisClient.del(key(WORKER, this.name))
         }
     }
 
-    protected void recoverFromException(final String curQueue, final Exception e) {
-        super.recoverFromException(curQueue, e)
-        final RecoveryStrategy recoveryStrategy = this.exceptionHandler.onException(this, e, curQueue)
-        final int reconnectAttempts = getReconnectAttempts()
-        final int reconnectSleepTime = 5000
-        switch (recoveryStrategy) {
-            case RecoveryStrategy.RECONNECT:
-                def attempt = 0
-
-                while (attempt++ <= reconnectAttempts && !this.jedis.isConnected()) {
-                    log.info("Reconnecting to Redis in response to exception - Attempt $attempt of $reconnectAttempts", e)
-                    try {
-                        this.jedis.disconnect()
-                        try {
-                            Thread.sleep(reconnectSleepTime)
-                        } catch (Exception ignore) {
-                        }
-                        this.jedis.connect()
-                        def pingResult = this.jedis.ping()
-                        if (pingResult != "PONG")
-                            log.info("Unexpected redis ping result, $pingResult")
-                    } catch (JedisConnectionException ignore) {
-                        // Ignore bad connection attempts
-                    } catch (Exception exception) {
-                        log.error("Recived exception when trying to reconnect to Redis", exception)
-                        throw exception
-                    }
-                }
-                if (!this.jedis.isConnected()) {
-                    log.error("Terminating in response to exception after $reconnectAttempts to reconnect", e)
-                    end(false)
-                } else {
-                    log.info("Reconnected to Redis after $attempt attempts")
-                }
-                break
-            case RecoveryStrategy.TERMINATE:
-                log.error("Terminating in response to exception", e)
-                end(false)
-                break
-            case RecoveryStrategy.PROCEED:
-                this.listenerDelegate.fireEvent(WORKER_ERROR, this, curQueue, null, null, null, e)
-                break
-            default:
-                log.error("Unknown WorkerRecoveryStrategy: $recoveryStrategy while attempting to recover from the following exception; worker proceeding...", e)
-                break
-        }
-    }
 }

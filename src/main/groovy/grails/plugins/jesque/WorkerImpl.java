@@ -772,6 +772,10 @@ public class WorkerImpl implements Worker {
         return result;
     }
 
+    protected Jedis getJedisClient() {
+        return this.jedis.getResource();
+    }
+
     /**
      * {@inheritDoc}
      */

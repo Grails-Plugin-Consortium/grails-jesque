@@ -130,9 +130,18 @@ class JesqueService implements DisposableBean {
         Class workerClass = GrailsWorkerImpl
         def customWorkerClass = grailsApplication.config.grails.jesque.custom.worker.clazz
         if (customWorkerClass) {
-            if (customWorkerClass in GrailsWorkerImpl) {
+            if (customWorkerClass instanceof String) {
+                try {
+                    customWorkerClass = Class.forName(customWorkerClass)
+                } catch (ClassNotFoundException ignore) {
+                    log.error("Custom Worker class not found for name $customWorkerClass")
+                    customWorkerClass = null
+                }
+            }
+            if (customWorkerClass && customWorkerClass in GrailsWorkerImpl) {
                 workerClass = customWorkerClass as Class
-            } else {
+            } else if (customWorkerClass) {
+                // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
                 log.warn("The specified custom worker class ${customWorkerClass} does not extend GrailsWorkerImpl. Ignoring it")
             }
         }
@@ -140,19 +149,39 @@ class JesqueService implements DisposableBean {
 
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
-            if (customListenerClass in WorkerListener) {
+            if (customListenerClass instanceof String) {
+                try {
+                    customListenerClass = Class.forName(customListenerClass)
+                } catch (ClassNotFoundException ignore) {
+                    log.error("Custom Job Listener class not found for name $customListenerClass")
+                    customListenerClass = null
+                }
+            }
+            if (customListenerClass && customListenerClass in WorkerListener) {
                 worker.getWorkerEventEmitter().addListener(customListenerClass.newInstance() as WorkerListener)
-            } else {
+            } else if (customListenerClass) {
+                // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
                 log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
             }
         }
 
         def customJobExceptionHandler = grailsApplication.config.grails.jesque.custom.jobExceptionHandler.clazz
         if (customJobExceptionHandler) {
-            if (customJobExceptionHandler in JobExceptionHandler)
+            if (customJobExceptionHandler instanceof String) {
+                try {
+                    customJobExceptionHandler = Class.forName(customJobExceptionHandler)
+                } catch (ClassNotFoundException ignore) {
+                    log.error("Custom Job Exception Handler class not found for name $customJobExceptionHandler")
+                    customJobExceptionHandler = null
+                }
+            }
+
+            if (customJobExceptionHandler && customJobExceptionHandler in JobExceptionHandler) {
                 worker.jobExceptionHandler = customJobExceptionHandler.newInstance() as JobExceptionHandler
-            else
+            } else if (customJobExceptionHandler) {
+                // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
                 log.warn("The specified custom job exception handler class does not implement JobExceptionHandler. Ignoring it")
+            }
         }
 
         if (exceptionHandler)
