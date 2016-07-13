@@ -26,7 +26,7 @@ class JesqueService implements DisposableBean {
 
     GrailsApplication grailsApplication
     def jesqueConfig
-    def jesqueDelayedJobService
+    JesqueDelayedJobService jesqueDelayedJobService
     PersistenceContextInterceptor persistenceInterceptor
     Client jesqueClient
     WorkerInfoDAO workerInfoDao
@@ -145,7 +145,7 @@ class JesqueService implements DisposableBean {
                 log.warn("The specified custom worker class ${customWorkerClass} does not extend GrailsWorkerImpl. Ignoring it")
             }
         }
-        Worker worker = (Worker) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
+        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
 
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
@@ -158,7 +158,7 @@ class JesqueService implements DisposableBean {
                 }
             }
             if (customListenerClass && customListenerClass in WorkerListener) {
-                worker.getWorkerEventEmitter().addListener(customListenerClass.newInstance() as WorkerListener)
+                worker.workerEventEmitter.addListener(customListenerClass.newInstance() as WorkerListener)
             } else if (customListenerClass) {
                 // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
                 log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
@@ -199,10 +199,10 @@ class JesqueService implements DisposableBean {
 
         def autoFlush = grailsApplication.config.grails.jesque.autoFlush ?: true
         def workerPersistenceListener = new WorkerPersistenceListener(persistenceInterceptor, autoFlush)
-        worker.getWorkerEventEmitter().addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
+        worker.workerEventEmitter.addListener(workerPersistenceListener, WorkerEvent.JOB_EXECUTE, WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE)
 
         def workerLifeCycleListener = new WorkerLifecycleListener(this)
-        worker.getWorkerEventEmitter().addListener(workerLifeCycleListener, WorkerEvent.WORKER_STOP)
+        worker.workerEventEmitter.addListener(workerLifeCycleListener, WorkerEvent.WORKER_STOP)
 
         def workerThread = new Thread(worker)
         workerThread.start()
