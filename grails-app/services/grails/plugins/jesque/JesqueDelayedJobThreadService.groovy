@@ -6,8 +6,6 @@ import org.springframework.beans.factory.DisposableBean
 import java.util.concurrent.atomic.AtomicReference
 
 class JesqueDelayedJobThreadService implements Runnable, DisposableBean {
-    static transactional = true
-    static scope = 'singleton'
 
     protected static final Integer IDLE_WAIT_TIME = 10 * 1000
     protected AtomicReference<JesqueDelayedJobThreadState> threadState = new AtomicReference(JesqueDelayedJobThreadState.New)
