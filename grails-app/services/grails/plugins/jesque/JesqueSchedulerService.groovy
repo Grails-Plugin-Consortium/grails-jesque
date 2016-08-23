@@ -14,7 +14,6 @@ import redis.clients.jedis.Tuple
 
 @Slf4j
 class JesqueSchedulerService {
-    static transactional = false
 
     RedisService redisService
     GrailsApplication grailsApplication
