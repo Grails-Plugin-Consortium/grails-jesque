@@ -17,9 +17,9 @@ import static net.greghaines.jesque.worker.WorkerEvent.JOB_PROCESS
 class GrailsWorkerImpl extends WorkerImpl {
 
     GrailsApplication grailsApplication
-    JobExceptionHandler jobExceptionHandler
 
-    public GrailsWorkerImpl(GrailsApplication grailsApplication, final Config config, final Pool<Jedis> jedisPool, final Collection<String> queues, final Map<String, ? extends Class> jobTypes) {
+    public GrailsWorkerImpl(GrailsApplication grailsApplication,
+                            final Config config, final Pool<Jedis> jedisPool, final Collection<String> queues, final Map<String, ? extends Class> jobTypes) {
         super(config, queues, new GrailsJesqueJobFactory(jobTypes), jedisPool)
 
         this.grailsApplication = grailsApplication
@@ -33,7 +33,6 @@ class GrailsWorkerImpl extends WorkerImpl {
         return execute(job, curQueue, instance, job.args)
     }
 
-
     protected void process(final Job job, final String curQueue) {
         this.listenerDelegate.fireEvent(JOB_PROCESS, this, curQueue, job, null, null, null)
         if (threadNameChangingEnabled) {
@@ -46,15 +45,15 @@ class GrailsWorkerImpl extends WorkerImpl {
             }
             def instance = createInstance(jobClass.canonicalName)
             execute(job, curQueue, instance, job.args)
-        } catch (Exception e) {
-            log.error("Failed job execution", e)
-            failure(e, job, curQueue)
+        } catch (Throwable t) {
+            failure(t, job, curQueue)
+        } finally {
+            removeInFlight(curQueue)
+            setProcessingJob(false)
+            withJedis { Jedis jedis ->
+                jedis.del(key(WORKER, this.name))
+            }
         }
-    }
-
-    protected void failure(final Exception ex, final Job job, final String curQueue) {
-        jobExceptionHandler?.onException(ex, job, curQueue)
-        super.failure(ex, job, curQueue)
     }
 
     protected Object createInstance(String fullClassName) {

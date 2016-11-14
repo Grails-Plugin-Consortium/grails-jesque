@@ -9,10 +9,7 @@ import net.greghaines.jesque.admin.AdminClient
 import net.greghaines.jesque.client.Client
 import net.greghaines.jesque.meta.WorkerInfo
 import net.greghaines.jesque.meta.dao.WorkerInfoDAO
-import net.greghaines.jesque.worker.ExceptionHandler
-import net.greghaines.jesque.worker.Worker
-import net.greghaines.jesque.worker.WorkerEvent
-import net.greghaines.jesque.worker.WorkerListener
+import net.greghaines.jesque.worker.*
 import org.joda.time.DateTime
 import org.springframework.beans.factory.DisposableBean
 
@@ -142,42 +139,17 @@ class JesqueService implements DisposableBean {
                 log.warn("The specified custom worker class ${customWorkerClass} does not extend GrailsWorkerImpl. Ignoring it")
             }
         }
+
         Worker worker = (GrailsWorkerImpl) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
 
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
-            if (customListenerClass instanceof String) {
-                try {
-                    customListenerClass = Class.forName(customListenerClass)
-                } catch (ClassNotFoundException ignore) {
-                    log.error("Custom Job Listener class not found for name $customListenerClass")
-                    customListenerClass = null
+            if (customListenerClass instanceof List) {
+                customListenerClass.each {
+                    addCustomListenerClass(worker, it)
                 }
-            }
-            if (customListenerClass && customListenerClass in WorkerListener) {
-                worker.workerEventEmitter.addListener(customListenerClass.newInstance() as WorkerListener)
-            } else if (customListenerClass) {
-                // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
-                log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
-            }
-        }
-
-        def customJobExceptionHandler = grailsApplication.config.grails.jesque.custom.jobExceptionHandler.clazz
-        if (customJobExceptionHandler) {
-            if (customJobExceptionHandler instanceof String) {
-                try {
-                    customJobExceptionHandler = Class.forName(customJobExceptionHandler)
-                } catch (ClassNotFoundException ignore) {
-                    log.error("Custom Job Exception Handler class not found for name $customJobExceptionHandler")
-                    customJobExceptionHandler = null
-                }
-            }
-
-            if (customJobExceptionHandler && customJobExceptionHandler in JobExceptionHandler) {
-                worker.jobExceptionHandler = customJobExceptionHandler.newInstance() as JobExceptionHandler
-            } else if (customJobExceptionHandler) {
-                // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
-                log.warn("The specified custom job exception handler class does not implement JobExceptionHandler. Ignoring it")
+            } else {
+                addCustomListenerClass(worker, customListenerClass)
             }
         }
 
@@ -324,5 +296,22 @@ class JesqueService implements DisposableBean {
 
     boolean areAllWorkersInClusterPaused() {
         return workerInfoDao.getActiveWorkerCount() == 0
+    }
+
+    private addCustomListenerClass(Worker worker, customListenerClass) {
+        if (customListenerClass instanceof String) {
+            try {
+                customListenerClass = Class.forName(customListenerClass)
+            } catch (ClassNotFoundException ignore) {
+                log.error("Custom Job Listener class not found for name $customListenerClass")
+                customListenerClass = null
+            }
+        }
+        if (customListenerClass && customListenerClass in WorkerListener) {
+            worker.workerEventEmitter.addListener(customListenerClass.newInstance() as WorkerListener)
+        } else if (customListenerClass) {
+            // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
+            log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
+        }
     }
 }

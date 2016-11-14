@@ -139,6 +139,21 @@ class DemoJesqueJob {
 }
 ```
 
+Custom Worker Listener
+----
+You can define one or more custom WorkerListener classes that will be automaticly added to all workers started from within jesqueService
+```groovy
+grails {
+    jesque {
+        }
+        custom {
+            listener.clazz = [LoggingWorkerListener] // accepts String, Class or List of String or Class
+        }
+    }
+}
+```
+*All Listeners have to implement the WorkerListener Interface otherwise they will simply be ignored*
+
 Roadmap
 ----
 * Upgrade custom Listener and Worker to grails 3 support
