@@ -7,9 +7,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 class JesqueSchedulerThreadService implements Runnable, DisposableBean {
 
-    static transactional = true
-    static scope = 'singleton'
-
     protected static String hostName
     protected static final Integer IDLE_WAIT_TIME = 10 * 1000
     protected AtomicReference<JesqueScheduleThreadState> threadState = new AtomicReference(JesqueScheduleThreadState.New)

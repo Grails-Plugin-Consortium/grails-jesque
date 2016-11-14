@@ -14,7 +14,6 @@ import redis.clients.jedis.Tuple
 
 @Slf4j
 class JesqueSchedulerService {
-    static transactional = false
 
     RedisService redisService
     GrailsApplication grailsApplication
@@ -147,7 +146,7 @@ class JesqueSchedulerService {
     }
 
     void enqueueJob(Jedis redis, String jobName, String hostName) {
-        log.info "Enqueuing job $jobName"
+        log.debug "Enqueuing job $jobName"
         redis.watch(Trigger.getRedisKeyForJobName(jobName))
 
         ScheduledJob scheduledJob = scheduledJobDaoService.findByName(redis, jobName)
@@ -197,7 +196,7 @@ class JesqueSchedulerService {
     void serverCheckIn(String hostName, DateTime checkInDate) {
         //TODO: detect checkins by another server of the same name
         redisService.withRedis { Jedis redis ->
-            log.info "$SCHEDULER_PREFIX:checkIn"
+            log.debug "$SCHEDULER_PREFIX:checkIn"
             redis.hset("$SCHEDULER_PREFIX:checkIn", hostName, new Long(checkInDate.millis).toString())
         }
     }

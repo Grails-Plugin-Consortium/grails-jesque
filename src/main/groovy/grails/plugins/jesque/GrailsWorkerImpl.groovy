@@ -65,7 +65,7 @@ class GrailsWorkerImpl extends WorkerImpl {
         withJedis { Jedis jedis ->
             jedis.set(key(WORKER, this.name), statusMsg(curQueue, job))
             try {
-                log.info "Running perform on instance ${job.className}"
+                log.debug "Running perform on instance ${job.className}"
                 final Object result
                 this.listenerDelegate.fireEvent(JOB_EXECUTE, this, curQueue, job, instance, null, null)
                 result = instance.perform(*args)
