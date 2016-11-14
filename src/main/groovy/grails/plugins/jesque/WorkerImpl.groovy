@@ -17,7 +17,6 @@ package grails.plugins.jesque
 
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.JsonMappingException
-import grails.plugins.jesque.WorkerImpl
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Config
@@ -700,7 +699,7 @@ public class WorkerImpl implements Worker {
     }
 
     protected withJedis(Closure c) {
-        Jedis jedis = jedisClient
+        Jedis jedis = getJedisClient()
         try {
             c.call(jedis)
         } finally {
@@ -721,7 +720,12 @@ public class WorkerImpl implements Worker {
     }
 
     protected void returnJedis(Jedis jedis) {
-        this.jedisPool.returnResource(jedis)
+        try {
+            this.jedisPool.returnResource(jedis)
+        } catch (Exception e) {
+            log.error("Could not return resource to jedis pool", e)
+            throw e
+        }
     }
 
     /**

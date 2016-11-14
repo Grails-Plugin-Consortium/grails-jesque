@@ -191,6 +191,8 @@ Release Notes
 * 1.1.4 - Bug fix for worker persistence context
 * 1.1.5 - Fixing sentinel support
 * 1.1.6 - Fixing sentinel support (again)
+* 1.1.9 - Closing pooled resource connection
+    * Rewrite of the worker impl
 
 
 License

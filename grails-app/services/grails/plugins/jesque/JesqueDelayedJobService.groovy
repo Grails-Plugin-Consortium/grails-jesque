@@ -8,8 +8,6 @@ import redis.clients.jedis.Pipeline
 
 class JesqueDelayedJobService {
 
-    static transactional = false
-
     def redisService
     def jesqueService
 
