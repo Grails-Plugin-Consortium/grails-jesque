@@ -73,15 +73,15 @@ public class WorkerImpl implements Worker {
     protected final WorkerListenerDelegate listenerDelegate = new WorkerListenerDelegate()
     protected final AtomicReference<JobExecutor.State> state = new AtomicReference<JobExecutor.State>(JobExecutor.State.NEW)
 
-    private final String name
-    private final AtomicBoolean paused = new AtomicBoolean(false)
-    private final AtomicBoolean processingJob = new AtomicBoolean(false)
-    private final long workerId = WORKER_COUNTER.getAndIncrement()
-    private final String threadNameBase = "Worker-${workerId} Jesque-${VersionUtils.getVersion()}:"
-    private final AtomicReference<Thread> threadRef = new AtomicReference<Thread>(null)
-    private final AtomicReference<ExceptionHandler> exceptionHandlerRef = new AtomicReference<ExceptionHandler>(new DefaultExceptionHandler())
-    private final AtomicReference<FailQueueStrategy> failQueueStrategyRef
-    private final JobFactory jobFactory
+    protected final String name
+    protected final AtomicBoolean paused = new AtomicBoolean(false)
+    protected final AtomicBoolean processingJob = new AtomicBoolean(false)
+    protected final long workerId = WORKER_COUNTER.getAndIncrement()
+    protected final String threadNameBase = "Worker-${workerId} Jesque-${VersionUtils.getVersion()}:"
+    protected final AtomicReference<Thread> threadRef = new AtomicReference<Thread>(null)
+    protected final AtomicReference<ExceptionHandler> exceptionHandlerRef = new AtomicReference<ExceptionHandler>(new DefaultExceptionHandler())
+    protected final AtomicReference<FailQueueStrategy> failQueueStrategyRef
+    protected final JobFactory jobFactory
 
     /**
      * Creates a new WorkerImpl, with the given connection to Redis.<br>
@@ -203,6 +203,10 @@ public class WorkerImpl implements Worker {
     @Override
     public boolean isProcessingJob() {
         return this.processingJob.get()
+    }
+
+    public void setProcessingJob(boolean processing) {
+        processingJob.set(processing)
     }
 
     /**
@@ -497,7 +501,7 @@ public class WorkerImpl implements Worker {
         }
     }
 
-    private void removeInFlight(final String curQueue) {
+    protected void removeInFlight(final String curQueue) {
         if (this.state.get() == JobExecutor.State.SHUTDOWN_IMMEDIATE) {
             lpoplpush(key(ResqueConstants.INFLIGHT, this.name, curQueue), key(ResqueConstants.QUEUE, curQueue))
         } else {
