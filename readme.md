@@ -208,7 +208,7 @@ Release Notes
 * 1.1.6 - Fixing sentinel support (again)
 * 1.1.9 - Closing pooled resource connection
     * Rewrite of the worker impl
-
+* 1.2.0 - Fixing exception handling in Grails Worker 
 
 License
 -------
