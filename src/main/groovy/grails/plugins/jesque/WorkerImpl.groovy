@@ -726,9 +726,9 @@ public class WorkerImpl implements Worker {
 
     protected void returnJedis(Jedis jedis) {
         try {
-            this.jedisPool.returnResource(jedis)
-        } catch (Exception e) {
-            log.error("Could not return resource to jedis pool", e)
+            jedis.close()
+        } catch (e) {
+            log.error("Could not close Jedis connection", e)
             throw e
         }
     }
