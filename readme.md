@@ -26,7 +26,7 @@ Add the jesque plugin to grails, it will automatically pull in jesque with it's 
 
 ```bash
 dependencies {
-    compile('org.grails.plugins:jesque:1.0.9')
+    compile('org.grails.plugins:jesque:1.2.1')
 }
 ```
 
@@ -209,6 +209,7 @@ Release Notes
 * 1.1.9 - Closing pooled resource connection
     * Rewrite of the worker impl
 * 1.2.0 - Fixing exception handling in Grails Worker 
+* 1.2.1 - Using close instead of return to pool 
 
 License
 -------

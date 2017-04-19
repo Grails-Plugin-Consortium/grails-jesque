@@ -31,7 +31,7 @@ class ScheduledJob {
     Map<String, String> toRedisHash() {
         String argsJson = new JSON(args).toString()
 
-        [name: name, cronExpression:cronExpression, args:argsJson, jesqueJobName:jesqueJobName, jesqueJobQueue:jesqueJobQueue, timeZone:timeZone.ID]
+        [name: name, cronExpression: cronExpression, args: argsJson, jesqueJobName: jesqueJobName, jesqueJobQueue: jesqueJobQueue, timeZone: timeZone.ID]
     }
 
     String getRedisKey() {

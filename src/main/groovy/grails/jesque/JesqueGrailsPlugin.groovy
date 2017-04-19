@@ -2,7 +2,14 @@ package grails.jesque
 
 import grails.core.GrailsApplication
 import grails.plugins.Plugin
-import grails.plugins.jesque.*
+import grails.plugins.jesque.AdminClientImpl
+import grails.plugins.jesque.GrailsJesqueJobClass
+import grails.plugins.jesque.JesqueConfigurationService
+import grails.plugins.jesque.JesqueDelayedJobThreadService
+import grails.plugins.jesque.JesqueJobArtefactHandler
+import grails.plugins.jesque.JesqueSchedulerThreadService
+import grails.plugins.jesque.JesqueService
+import grails.plugins.jesque.TriggersConfigBuilder
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Config
 import net.greghaines.jesque.ConfigBuilder

@@ -18,8 +18,10 @@ class GrailsWorkerImpl extends WorkerImpl {
 
     GrailsApplication grailsApplication
 
-    public GrailsWorkerImpl(GrailsApplication grailsApplication,
-                            final Config config, final Pool<Jedis> jedisPool, final Collection<String> queues, final Map<String, ? extends Class> jobTypes) {
+    GrailsWorkerImpl(GrailsApplication grailsApplication,
+                     final Config config,
+                     final Pool<Jedis> jedisPool,
+                     final Collection<String> queues, final Map<String, ? extends Class> jobTypes) {
         super(config, queues, new GrailsJesqueJobFactory(jobTypes), jedisPool)
 
         this.grailsApplication = grailsApplication

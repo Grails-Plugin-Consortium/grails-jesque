@@ -21,8 +21,19 @@ import net.greghaines.jesque.admin.Admin;
 import net.greghaines.jesque.admin.commands.PauseCommand;
 import net.greghaines.jesque.admin.commands.ShutdownCommand;
 import net.greghaines.jesque.json.ObjectMapperFactory;
-import net.greghaines.jesque.utils.*;
-import net.greghaines.jesque.worker.*;
+import net.greghaines.jesque.utils.ConcurrentHashSet;
+import net.greghaines.jesque.utils.ConcurrentSet;
+import net.greghaines.jesque.utils.JedisUtils;
+import net.greghaines.jesque.utils.JesqueUtils;
+import net.greghaines.jesque.utils.ResqueConstants;
+import net.greghaines.jesque.worker.DefaultExceptionHandler;
+import net.greghaines.jesque.worker.ExceptionHandler;
+import net.greghaines.jesque.worker.JobExecutor;
+import net.greghaines.jesque.worker.JobFactory;
+import net.greghaines.jesque.worker.MapBasedJobFactory;
+import net.greghaines.jesque.worker.RecoveryStrategy;
+import net.greghaines.jesque.worker.Worker;
+import net.greghaines.jesque.worker.WorkerAware;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +48,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static net.greghaines.jesque.utils.JesqueUtils.*;
+import static net.greghaines.jesque.utils.JesqueUtils.entry;
+import static net.greghaines.jesque.utils.JesqueUtils.map;
+import static net.greghaines.jesque.utils.JesqueUtils.set;
 import static net.greghaines.jesque.utils.ResqueConstants.ADMIN_CHANNEL;
 import static net.greghaines.jesque.utils.ResqueConstants.CHANNEL;
-import static net.greghaines.jesque.worker.JobExecutor.State.*;
+import static net.greghaines.jesque.worker.JobExecutor.State.NEW;
+import static net.greghaines.jesque.worker.JobExecutor.State.RUNNING;
+import static net.greghaines.jesque.worker.JobExecutor.State.SHUTDOWN;
 
 /**
  * AdminImpl receives administrative jobs for a worker.
@@ -55,15 +70,15 @@ public class AdminImpl implements Admin {
 
     protected final Pool<Jedis> jedis;
     protected final String namespace;
-    private final JobFactory jobFactory;
-    private final ConcurrentSet<String> channels = new ConcurrentHashSet<String>();
     protected final PubSubListener jedisPubSub = new PubSubListener();
     protected final AtomicReference<Worker> workerRef = new AtomicReference<Worker>(null);
     protected final AtomicReference<JobExecutor.State> state = new AtomicReference<JobExecutor.State>(NEW);
+    private final JobFactory jobFactory;
+    private final ConcurrentSet<String> channels = new ConcurrentHashSet<String>();
     private final AtomicBoolean processingJob = new AtomicBoolean(false);
     private final AtomicReference<Thread> threadRef = new AtomicReference<Thread>(null);
     private final AtomicReference<ExceptionHandler> exceptionHandlerRef =
-            new AtomicReference<ExceptionHandler>(new DefaultExceptionHandler());
+        new AtomicReference<ExceptionHandler>(new DefaultExceptionHandler());
 
     /**
      * Create a new AdminImpl which subscribes to {@link ResqueConstants#ADMIN_CHANNEL}, registers the
@@ -73,14 +88,14 @@ public class AdminImpl implements Admin {
      */
     public AdminImpl(final Config config) {
         this(config, set(ADMIN_CHANNEL), new MapBasedJobFactory(map(
-                entry("PauseCommand", PauseCommand.class),
-                entry("ShutdownCommand", ShutdownCommand.class))));
+            entry("PauseCommand", PauseCommand.class),
+            entry("ShutdownCommand", ShutdownCommand.class))));
     }
 
     public AdminImpl(final Config config, Pool<Jedis> jedisPool) {
         this(config, set(ADMIN_CHANNEL), new MapBasedJobFactory(map(
-                entry("PauseCommand", PauseCommand.class),
-                entry("ShutdownCommand", ShutdownCommand.class))), jedisPool);
+            entry("PauseCommand", PauseCommand.class),
+            entry("ShutdownCommand", ShutdownCommand.class))), jedisPool);
     }
 
     /**
@@ -120,6 +135,22 @@ public class AdminImpl implements Admin {
         this.jedis.getResource().select(config.getDatabase());
         setChannels(channels);
         this.jobFactory = jobFactory;
+    }
+
+    /**
+     * Verify that the given channels are all valid.
+     *
+     * @param channels the given channels
+     */
+    protected static void checkChannels(final Iterable<String> channels) {
+        if (channels == null) {
+            throw new IllegalArgumentException("channels must not be null");
+        }
+        for (final String channel : channels) {
+            if (channel == null || "".equals(channel)) {
+                throw new IllegalArgumentException("channels' members must not be null: " + channels);
+            }
+        }
     }
 
     /**
@@ -254,6 +285,83 @@ public class AdminImpl implements Admin {
         this.exceptionHandlerRef.set(exceptionHandler);
     }
 
+    /**
+     * Executes the given job.
+     *
+     * @param job      the job to execute
+     * @param curQueue the queue the job came from
+     * @param instance the materialized job
+     * @return the result of the job execution
+     * @throws Exception if the instance is a {@link Callable} and throws an exception
+     */
+    protected Object execute(final Job job, final String curQueue, final Object instance) throws Exception {
+        final Object result;
+        if (instance instanceof WorkerAware) {
+            ((WorkerAware) instance).setWorker(this.workerRef.get());
+        }
+        if (instance instanceof Callable) {
+            result = ((Callable<?>) instance).call(); // The job is executing!
+        } else if (instance instanceof Runnable) {
+            ((Runnable) instance).run(); // The job is executing!
+            result = null;
+        } else { // Should never happen since we're testing the class earlier
+            throw new ClassCastException("instance must be a Runnable or a Callable: " + instance.getClass().getName()
+                + " - " + instance);
+        }
+        return result;
+    }
+
+    /**
+     * @return the number of times this Admin will attempt to reconnect to Redis
+     * before giving up
+     */
+    protected int getReconnectAttempts() {
+        return RECONNECT_ATTEMPTS;
+    }
+
+    /**
+     * Handle an exception that was thrown from inside
+     * {@link PubSubListener#onMessage(String, String)}.
+     *
+     * @param channel the name of the channel that was being processed when the
+     *                exception was thrown
+     * @param e       the exception that was thrown
+     */
+    protected void recoverFromException(final String channel, final Exception e) {
+        final RecoveryStrategy recoveryStrategy = this.exceptionHandlerRef.get().onException(this, e, channel);
+        switch (recoveryStrategy) {
+            case RECONNECT:
+                LOG.info("Reconnecting to Redis in response to exception", e);
+                final int reconAttempts = getReconnectAttempts();
+                if (!JedisUtils.reconnect(this.jedis.getResource(), reconAttempts, RECONNECT_SLEEP_TIME)) {
+                    LOG.warn("Terminating in response to exception after " + reconAttempts + " to reconnect", e);
+                    end(false);
+                } else {
+                    LOG.info("Reconnected to Redis");
+                }
+                break;
+            case TERMINATE:
+                LOG.warn("Terminating in response to exception", e);
+                end(false);
+                break;
+            case PROCEED:
+                break;
+            default:
+                LOG.error("Unknown RecoveryStrategy: " + recoveryStrategy
+                    + " while attempting to recover from the following exception; Admin proceeding...", e);
+                break;
+        }
+    }
+
+    private String[] createFullChannels() {
+        final String[] fullChannels = this.channels.toArray(new String[this.channels.size()]);
+        int i = 0;
+        for (final String channel : fullChannels) {
+            fullChannels[i++] = JesqueUtils.createKey(this.namespace, CHANNEL, channel);
+        }
+        return fullChannels;
+    }
+
     protected class PubSubListener extends JedisPubSub {
         /**
          * {@inheritDoc}
@@ -307,98 +415,5 @@ public class AdminImpl implements Admin {
         @Override
         public void onPSubscribe(final String pattern, final int subscribedChannels) {
         } // NOOP
-    }
-
-    /**
-     * Executes the given job.
-     *
-     * @param job      the job to execute
-     * @param curQueue the queue the job came from
-     * @param instance the materialized job
-     * @return the result of the job execution
-     * @throws Exception if the instance is a {@link Callable} and throws an exception
-     */
-    protected Object execute(final Job job, final String curQueue, final Object instance) throws Exception {
-        final Object result;
-        if (instance instanceof WorkerAware) {
-            ((WorkerAware) instance).setWorker(this.workerRef.get());
-        }
-        if (instance instanceof Callable) {
-            result = ((Callable<?>) instance).call(); // The job is executing!
-        } else if (instance instanceof Runnable) {
-            ((Runnable) instance).run(); // The job is executing!
-            result = null;
-        } else { // Should never happen since we're testing the class earlier
-            throw new ClassCastException("instance must be a Runnable or a Callable: " + instance.getClass().getName()
-                    + " - " + instance);
-        }
-        return result;
-    }
-
-    /**
-     * @return the number of times this Admin will attempt to reconnect to Redis
-     * before giving up
-     */
-    protected int getReconnectAttempts() {
-        return RECONNECT_ATTEMPTS;
-    }
-
-    /**
-     * Handle an exception that was thrown from inside
-     * {@link PubSubListener#onMessage(String, String)}.
-     *
-     * @param channel the name of the channel that was being processed when the
-     *                exception was thrown
-     * @param e       the exception that was thrown
-     */
-    protected void recoverFromException(final String channel, final Exception e) {
-        final RecoveryStrategy recoveryStrategy = this.exceptionHandlerRef.get().onException(this, e, channel);
-        switch (recoveryStrategy) {
-            case RECONNECT:
-                LOG.info("Reconnecting to Redis in response to exception", e);
-                final int reconAttempts = getReconnectAttempts();
-                if (!JedisUtils.reconnect(this.jedis.getResource(), reconAttempts, RECONNECT_SLEEP_TIME)) {
-                    LOG.warn("Terminating in response to exception after " + reconAttempts + " to reconnect", e);
-                    end(false);
-                } else {
-                    LOG.info("Reconnected to Redis");
-                }
-                break;
-            case TERMINATE:
-                LOG.warn("Terminating in response to exception", e);
-                end(false);
-                break;
-            case PROCEED:
-                break;
-            default:
-                LOG.error("Unknown RecoveryStrategy: " + recoveryStrategy
-                        + " while attempting to recover from the following exception; Admin proceeding...", e);
-                break;
-        }
-    }
-
-    /**
-     * Verify that the given channels are all valid.
-     *
-     * @param channels the given channels
-     */
-    protected static void checkChannels(final Iterable<String> channels) {
-        if (channels == null) {
-            throw new IllegalArgumentException("channels must not be null");
-        }
-        for (final String channel : channels) {
-            if (channel == null || "".equals(channel)) {
-                throw new IllegalArgumentException("channels' members must not be null: " + channels);
-            }
-        }
-    }
-
-    private String[] createFullChannels() {
-        final String[] fullChannels = this.channels.toArray(new String[this.channels.size()]);
-        int i = 0;
-        for (final String channel : fullChannels) {
-            fullChannels[i++] = JesqueUtils.createKey(this.namespace, CHANNEL, channel);
-        }
-        return fullChannels;
     }
 }

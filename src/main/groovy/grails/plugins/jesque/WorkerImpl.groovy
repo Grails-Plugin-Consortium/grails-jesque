@@ -71,7 +71,8 @@ public class WorkerImpl implements Worker {
     protected final String namespace
     protected final BlockingDeque<String> queueNames = new LinkedBlockingDeque<String>()
     protected final WorkerListenerDelegate listenerDelegate = new WorkerListenerDelegate()
-    protected final AtomicReference<JobExecutor.State> state = new AtomicReference<JobExecutor.State>(JobExecutor.State.NEW)
+    protected
+    final AtomicReference<JobExecutor.State> state = new AtomicReference<JobExecutor.State>(JobExecutor.State.NEW)
 
     protected final String name
     protected final AtomicBoolean paused = new AtomicBoolean(false)
@@ -79,7 +80,8 @@ public class WorkerImpl implements Worker {
     protected final long workerId = WORKER_COUNTER.getAndIncrement()
     protected final String threadNameBase = "Worker-${workerId} Jesque-${VersionUtils.getVersion()}:"
     protected final AtomicReference<Thread> threadRef = new AtomicReference<Thread>(null)
-    protected final AtomicReference<ExceptionHandler> exceptionHandlerRef = new AtomicReference<ExceptionHandler>(new DefaultExceptionHandler())
+    protected
+    final AtomicReference<ExceptionHandler> exceptionHandlerRef = new AtomicReference<ExceptionHandler>(new DefaultExceptionHandler())
     protected final AtomicReference<FailQueueStrategy> failQueueStrategyRef
     protected final JobFactory jobFactory
 
@@ -93,7 +95,9 @@ public class WorkerImpl implements Worker {
      * @param jedisPool the connection to Redis
      * @throws IllegalArgumentException if either config, queues, jobFactory or jedisPool is null
      */
-    public WorkerImpl(final Config config, final Collection<String> queues, final JobFactory jobFactory, final Pool<Jedis> jedisPool) {
+    public WorkerImpl(
+            final Config config,
+            final Collection<String> queues, final JobFactory jobFactory, final Pool<Jedis> jedisPool) {
         if (config == null) {
             throw new IllegalArgumentException("config must not be null")
         }

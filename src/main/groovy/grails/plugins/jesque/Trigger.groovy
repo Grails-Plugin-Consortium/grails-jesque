@@ -23,7 +23,7 @@ class Trigger {
 
     Map<String, String> toRedisHash() {
 
-        [jobName: jobName, nextFireTime:nextFireTime.millis.toString(), state:state.name, acquiredBy:acquiredBy]
+        [jobName: jobName, nextFireTime: nextFireTime.millis.toString(), state: state.name, acquiredBy: acquiredBy]
     }
 
     String getRedisKey() {

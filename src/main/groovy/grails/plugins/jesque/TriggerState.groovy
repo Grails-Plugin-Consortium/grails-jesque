@@ -11,6 +11,6 @@ enum TriggerState {
     }
 
     static TriggerState findByName(String name) {
-        values().find{ it.name == name }
+        values().find { it.name == name }
     }
 }

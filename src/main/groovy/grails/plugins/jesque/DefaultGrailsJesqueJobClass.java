@@ -27,40 +27,40 @@ public class DefaultGrailsJesqueJobClass extends AbstractInjectableGrailsClass i
 
         if (triggersClosure != null) {
             builder.build(triggersClosure);
-            return (Map)builder.getTriggers();
+            return (Map) builder.getTriggers();
         } else {
             return new HashMap();
         }
     }
 
     public Map getTriggers() {
-        if( triggers == null )
+        if (triggers == null)
             triggers = evaluateTriggers();
         return triggers;
     }
 
     public String getQueue() {
-        String queue = (String)getPropertyValue(GrailsJesqueJobClassProperty.QUEUE);
-        if( queue == null )
+        String queue = (String) getPropertyValue(GrailsJesqueJobClassProperty.QUEUE);
+        if (queue == null)
             queue = GrailsJesqueJobClassProperty.DEFAULT_QUEUE;
         return queue;
     }
 
     public String getWorkerPool() {
-        String workerPool = (String)getPropertyValue(GrailsJesqueJobClassProperty.WORKER_POOL);
-        if( workerPool == null )
+        String workerPool = (String) getPropertyValue(GrailsJesqueJobClassProperty.WORKER_POOL);
+        if (workerPool == null)
             workerPool = GrailsJesqueJobClassProperty.DEFAULT_WORKER_POOL;
 
         return workerPool;
     }
 
     public List getJobNames() {
-        List jobNames = (List)getPropertyValue(GrailsJesqueJobClassProperty.JOB_NAMES);
-        if( jobNames == null || jobNames.size() == 0 )
-            jobNames = Arrays.asList(getClazz().getName(), getClazz().getSimpleName() );
+        List jobNames = (List) getPropertyValue(GrailsJesqueJobClassProperty.JOB_NAMES);
+        if (jobNames == null || jobNames.size() == 0)
+            jobNames = Arrays.asList(getClazz().getName(), getClazz().getSimpleName());
         return jobNames;
     }
-    
+
     public String toString() {
         return "Job > " + getName();
     }

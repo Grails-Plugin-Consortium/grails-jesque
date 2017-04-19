@@ -7,11 +7,11 @@ import java.util.Map;
 
 public interface GrailsJesqueJobClass extends InjectableGrailsClass {
 
-    public Map getTriggers();
-    
-    public String getQueue();
+    Map getTriggers();
 
-    public String getWorkerPool();
+    String getQueue();
 
-    public List getJobNames();
+    String getWorkerPool();
+
+    List getJobNames();
 }

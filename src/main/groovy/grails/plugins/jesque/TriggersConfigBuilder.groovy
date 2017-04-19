@@ -40,19 +40,19 @@ public class TriggersConfigBuilder extends BuilderSupport {
     }
 
     private prepareCommonTriggerAttributes(Map triggerAttributes) {
-        if(triggerAttributes[GrailsJesqueJobClassProperty.NAME] == null)
+        if (triggerAttributes[GrailsJesqueJobClassProperty.NAME] == null)
             triggerAttributes[GrailsJesqueJobClassProperty.NAME] = "${jobClass.fullName}${triggerNumber++}"
 
-        if(triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_NAME] == null) {
+        if (triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_NAME] == null) {
             triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_NAME] = jobClass.jobNames.first()
         }
 
-        if(triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_QUEUE] == null) {
+        if (triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_QUEUE] == null) {
             triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_QUEUE] = jobClass.queue
         }
 
-        if(triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_ARGUMENTS] != null
-            && !(triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_ARGUMENTS] instanceof List))
+        if (triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_ARGUMENTS] != null
+                && !(triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_ARGUMENTS] instanceof List))
             throw new Exception("If ${GrailsJesqueJobClassProperty.JESQUE_JOB_ARGUMENTS} exists, it must be a list");
     }
 
@@ -63,7 +63,7 @@ public class TriggersConfigBuilder extends BuilderSupport {
 
         def triggerType = name
 
-        switch(triggerType) {
+        switch (triggerType) {
             case 'cron':
                 prepareCronTriggerAttributes(triggerAttributes)
                 break
@@ -75,16 +75,16 @@ public class TriggersConfigBuilder extends BuilderSupport {
     }
 
     private def prepareCronTriggerAttributes(Map triggerAttributes) {
-        if(!triggerAttributes[GrailsJesqueJobClassProperty.CRON_EXPRESSION])
+        if (!triggerAttributes[GrailsJesqueJobClassProperty.CRON_EXPRESSION])
             throw new Exception("Cron trigger must have 'cronExpression' attribute")
 
-        if(!CronExpression.isValidExpression(triggerAttributes[GrailsJesqueJobClassProperty.CRON_EXPRESSION].toString()))
+        if (!CronExpression.isValidExpression(triggerAttributes[GrailsJesqueJobClassProperty.CRON_EXPRESSION].toString()))
             throw new Exception("Cron expression '${triggerAttributes[GrailsJesqueJobClassProperty.CRON_EXPRESSION]}' in the job class ${jobClass.fullName} is not a valid cron expression");
 
-        if(triggerAttributes[GrailsJesqueJobClassProperty.TIMEZONE]) {
+        if (triggerAttributes[GrailsJesqueJobClassProperty.TIMEZONE]) {
             try {
                 DateTimeZone.forID(triggerAttributes[GrailsJesqueJobClassProperty.TIMEZONE])
-            } catch(Exception exception) {
+            } catch (Exception exception) {
                 throw new Exception("Invalid ${GrailsJesqueJobClassProperty.TIMEZONE} on cron trigger", exception)
             }
         } else {
