@@ -1,6 +1,7 @@
 package grails.plugins.jesque
 
 import grails.core.GrailsApplication
+import grails.core.support.GrailsApplicationAware
 import grails.persistence.support.PersistenceContextInterceptor
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Job
@@ -308,7 +309,11 @@ class JesqueService implements DisposableBean {
             }
         }
         if (customListenerClass && customListenerClass in WorkerListener) {
-            worker.workerEventEmitter.addListener(customListenerClass.newInstance() as WorkerListener)
+            def customListener = customListenerClass.newInstance() as WorkerListener
+            if (customListener instanceof GrailsApplicationAware) {
+                customListener.setGrailsApplication(grailsApplication)
+            }
+            worker.workerEventEmitter.addListener(customListener)
         } else if (customListenerClass) {
             // the "null" case should only happen at this point, when we could not find the class, so we can safely assume there was a error message already
             log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
