@@ -6,6 +6,7 @@ import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Job
 import net.greghaines.jesque.admin.Admin
 import net.greghaines.jesque.admin.AdminClient
+import net.greghaines.jesque.admin.AdminPoolImpl
 import net.greghaines.jesque.client.Client
 import net.greghaines.jesque.meta.WorkerInfo
 import net.greghaines.jesque.meta.dao.WorkerInfoDAO
@@ -163,7 +164,7 @@ class JesqueService implements DisposableBean {
         workers.add(worker)
 
         // create an Admin for this worker (makes it possible to administer across a cluster)
-        Admin admin = new AdminImpl(jesqueConfig, redisPool)
+        Admin admin = new AdminPoolImpl(jesqueConfig, redisPool)
         admin.setWorker(worker)
 
         def autoFlush = grailsApplication.config.grails.jesque.autoFlush ?: true
