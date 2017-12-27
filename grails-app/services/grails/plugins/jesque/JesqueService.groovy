@@ -20,7 +20,6 @@ class JesqueService implements DisposableBean {
 
     GrailsApplication grailsApplication
     def jesqueConfig
-    JesqueDelayedJobService jesqueDelayedJobService
     PersistenceContextInterceptor persistenceInterceptor
     Client jesqueClient
     WorkerInfoDAO workerInfoDao
@@ -61,7 +60,18 @@ class JesqueService implements DisposableBean {
     }
 
     void enqueueAt(DateTime dateTime, String queueName, Job job) {
-        jesqueDelayedJobService.enqueueAt(dateTime, queueName, job)
+        try {
+            if (dateTime.millis < System.currentTimeMillis()) {
+                // in case we got called with DateTime.now(); prevents hitting the exception
+                jesqueClient.enqueue(queueName, job)
+            } else {
+                String delayedQueueName = "${queueName}Delayed"
+                jesqueClient.delayedEnqueue(delayedQueueName, job, dateTime.millis)
+            }
+        } catch (IllegalArgumentException ignore) {
+            // enqueueing the job in a regular queue in case jesque complained about the millis being not in the future
+            jesqueClient.enqueue(queueName, job)
+        }
     }
 
     void enqueueAt(DateTime dateTime, String queueName, String jobName, Object... args) {
@@ -119,7 +129,12 @@ class JesqueService implements DisposableBean {
 
     Worker startWorker(List<String> queues, Map<String, Class> jobTypes, ExceptionHandler exceptionHandler = null,
                        boolean paused = false) {
-        log.info "Starting worker processing queueus: ${queues}"
+        // automatically support delayed queues
+        def allQueues = queues.collectMany { queue ->
+            [queue, "${queue}Delayed".toString()]
+        }
+
+        log.info "Starting worker processing queueus: ${allQueues}"
 
         Class workerClass = GrailsWorkerImpl
         def customWorkerClass = grailsApplication.config.grails.jesque.custom.worker.clazz
@@ -140,7 +155,7 @@ class JesqueService implements DisposableBean {
             }
         }
 
-        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
+        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, allQueues, jobTypes)
 
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
