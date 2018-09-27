@@ -1,47 +1,45 @@
 package grails.plugins.jesque
 
+import grails.core.GrailsApplication
+import net.greghaines.jesque.Job
+import net.greghaines.jesque.utils.ReflectionUtils
 import net.greghaines.jesque.worker.MapBasedJobFactory
-
-import java.util.Map.Entry
+import net.greghaines.jesque.worker.UnpermittedJobException
 
 /**
- * MapBasedJobFactory uses a map of job names and types to materialize jobs.
+ * Job Factory that knows how to materialize grails jobs.
  */
-public class GrailsJesqueJobFactory extends MapBasedJobFactory {
+class GrailsJesqueJobFactory extends MapBasedJobFactory {
 
-    /**
-     * Constructor.
-     * @param jobTypes the map of job names and types to execute
-     */
-    GrailsJesqueJobFactory(Map<String, ? extends Class<?>> jobTypes) {
+    GrailsApplication grailsApplication
+
+    GrailsJesqueJobFactory(Map<String, ? extends Class<?>> jobTypes, final GrailsApplication grailsApplication) {
         super(jobTypes)
+        this.grailsApplication = grailsApplication
     }
 
-    protected void checkJobTypes(final Map<String, ? extends Class<?>> jobTypes) {
-        if (jobTypes == null) {
-            throw new IllegalArgumentException("jobTypes must not be null");
-        }
-        for (final Entry<String, ? extends Class<?>> entry : jobTypes.entrySet()) {
-            try {
-                checkJobType(entry.getKey(), entry.getValue());
-            } catch (IllegalArgumentException iae) {
-                throw new IllegalArgumentException("jobTypes contained invalid value", iae);
-            }
-        }
-    }
-
-    /**
-     * Determine if a job name and job type are valid.
-     * @param jobName the name of the job
-     * @param jobType the class of the job
-     * @throws IllegalArgumentException if the name or type are invalid
-     */
+    @Override
     protected void checkJobType(final String jobName, final Class<?> jobType) {
         if (jobName == null) {
-            throw new IllegalArgumentException("jobName must not be null");
+            throw new IllegalArgumentException("jobName must not be null")
         }
         if (jobType == null) {
-            throw new IllegalArgumentException("jobType must not be null");
+            throw new IllegalArgumentException("jobType must not be null")
         }
     }
+
+    @Override
+    Object materializeJob(final Job job) throws Exception {
+        Class jobClass = jobTypes[job.className]
+        if (!jobClass) {
+            throw new UnpermittedJobException(job.className)
+        }
+
+        def instance = grailsApplication.mainContext.getBean(jobClass.canonicalName)
+        if (job.vars && !job.vars.isEmpty()) {
+            ReflectionUtils.invokeSetters(instance, job.vars)
+        }
+        return instance
+    }
+
 }
