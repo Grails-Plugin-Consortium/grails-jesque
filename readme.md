@@ -141,17 +141,19 @@ class DemoJesqueJob {
 
 Custom Worker Listener
 ----
-You can define one or more custom WorkerListener classes that will be automaticly added to all workers started from within jesqueService
+You can define one or more custom WorkerListener classes that will be automatically added to all workers started from within `jesqueService`.
+You can implement the `GrailsApplicationAware` interface if you need access to the `grailsApplication` in your worker listener.
+
 ```groovy
 grails {
     jesque {
-        }
         custom {
-            listener.clazz = [LoggingWorkerListener] // accepts String, Class or List of String or Class
+            listener.clazz = [LoggingWorkerListener] // accepts String, Class or List<String> or List<Class>
         }
     }
 }
 ```
+ 
 *All Listeners have to implement the WorkerListener Interface otherwise they will simply be ignored*
 
 Roadmap
