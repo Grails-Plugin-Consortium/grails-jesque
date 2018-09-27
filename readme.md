@@ -53,6 +53,10 @@ class SomeOtherClass {
     def doWorkAsync() {
         jesqueService.enqueue( 'myQueueName', BackgroundJob.simpleName, 1, 'hi there')
     }
+
+    def doWorkAsyncLater() {
+            jesqueService.enqueueAt(System.currentTimeMillis() + (1000 * 60), 'myQueueName', BackgroundJob.simpleName, 1, 'hi there')
+        }
 }
 ```
 
@@ -75,12 +79,13 @@ grails:
         pruneWorkersOnStartup: true
         createWorkersOnStartup: true
         schedulerThreadActive: true
-        delayedJobThreadActive: true
         startPaused: false
         autoFlush: true
         workers:
             DemoJesqueJobPool:
-                queueNames: DemoJesqueJobQueue
+                queueNames:
+                    - "DemoQueue1"
+                    - "DemoQueue2"
                 jobTypes:
                     - org.grails.jesque.demo.DemoJesqueJob
                     - org.grails.jesque.demo.DemoTwoJesqueJob

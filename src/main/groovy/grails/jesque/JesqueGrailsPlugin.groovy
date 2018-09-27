@@ -5,7 +5,6 @@ import grails.plugins.Plugin
 import grails.plugins.jesque.AdminClientImpl
 import grails.plugins.jesque.GrailsJesqueJobClass
 import grails.plugins.jesque.JesqueConfigurationService
-import grails.plugins.jesque.JesqueDelayedJobThreadService
 import grails.plugins.jesque.JesqueJobArtefactHandler
 import grails.plugins.jesque.JesqueSchedulerThreadService
 import grails.plugins.jesque.JesqueService
@@ -178,11 +177,6 @@ class JesqueGrailsPlugin extends Plugin {
                     log.info "Launching jesque scheduler thread"
                     JesqueSchedulerThreadService jesqueSchedulerThreadService = applicationContext.jesqueSchedulerThreadService
                     jesqueSchedulerThreadService.startSchedulerThread()
-                }
-                if (jesqueConfigMap.delayedJobThreadActive) {
-                    log.info "Launching delayed job thread"
-                    JesqueDelayedJobThreadService jesqueDelayedJobThreadService = applicationContext.jesqueDelayedJobThreadService
-                    jesqueDelayedJobThreadService.startThread()
                 }
 
                 log.info "Starting jesque workers"
