@@ -104,10 +104,6 @@ class JesqueSchedulerService {
             if (!waitingJobs)
                 return []
 
-            //only get and wait for jobs with the exact time until something like quartz batchTimeWindow is implemented
-            def earliestWaitingJobTime = waitingJobs.min { it.score }.score
-            waitingJobs.findAll { it.score == earliestWaitingJobTime }
-
             //lock jobs
             waitingJobs.inject([]) { List<Tuple> acquiredJobs, Tuple jobData ->
                 String jobName = jobData.element
@@ -116,6 +112,12 @@ class JesqueSchedulerService {
                 Trigger trigger = triggerDaoService.findByJobName(jobName)
                 if (trigger.state != TriggerState.Waiting) {
                     log.debug "Trigger not in waiting state for job ${jobName}"
+                    redis.unwatch()
+                    return acquiredJobs
+                }
+
+                if (jobData.score != trigger.nextFireTime.millis) {
+                    log.debug "Trigger nextFireTime has been changed: job $jobName was already executed by another thread"
                     redis.unwatch()
                     return acquiredJobs
                 }
